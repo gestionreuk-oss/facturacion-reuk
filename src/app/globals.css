@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* REUK — Manual de Identidad Visual 2025 */
+@theme inline {
+  --font-sans: var(--font-montserrat);
+  --font-serif: var(--font-lora);
+
+  --color-forest: #1a4121; /* Pantone 3435 C — primario */
+  --color-cream: #f8f8f2; /* Pantone 11-0601 TCX — fondo */
+  --color-sage-dark: #3d4a3d; /* Pantone 5535 C — texto / wordmark */
+  --color-sage-light: #a1afa0; /* Pantone 5565 C — texto secundario */
+}
+
+/* One committed look (light, cream) matching REUK's print identity —
+   not adapted per viewer theme, same as their stationery and deck. */
+body {
+  background: var(--color-cream);
+  color: var(--color-sage-dark);
+}
