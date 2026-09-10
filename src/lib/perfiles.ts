@@ -9,6 +9,8 @@ export type PerfilCliente = {
   tipoSolicitud: string;
   negocioCliente: string | null;
   configuracionCalculoId: string;
+  /** null = todos los usos de CFDI habilitados (sin restricción). */
+  usosCfdiHabilitados: string[] | null;
   creadoEn: string;
 };
 
@@ -20,6 +22,7 @@ type FilaPerfil = {
   tipo_solicitud: string;
   negocio_cliente: string | null;
   configuracion_calculo_id: string;
+  usos_cfdi_habilitados: string[] | null;
   creado_en: string;
 };
 
@@ -32,6 +35,7 @@ function aPerfil(fila: FilaPerfil): PerfilCliente {
     tipoSolicitud: fila.tipo_solicitud,
     negocioCliente: fila.negocio_cliente,
     configuracionCalculoId: fila.configuracion_calculo_id,
+    usosCfdiHabilitados: fila.usos_cfdi_habilitados,
     creadoEn: fila.creado_en,
   };
 }
@@ -67,15 +71,18 @@ export type DatosPerfil = {
   tipoSolicitud: string;
   negocioCliente: string | null;
   configuracionCalculoId: string;
+  usosCfdiHabilitados: string[] | null;
 };
 
 export async function crearPerfil(datos: DatosPerfil): Promise<PerfilCliente> {
   const filas = await sql<FilaPerfil[]>`
     INSERT INTO perfiles
-      (slug, nombre, activo, tipo_solicitud, negocio_cliente, configuracion_calculo_id)
+      (slug, nombre, activo, tipo_solicitud, negocio_cliente, configuracion_calculo_id,
+       usos_cfdi_habilitados)
     VALUES
       (${datos.slug}, ${datos.nombre}, ${datos.activo}, ${datos.tipoSolicitud},
-       ${datos.negocioCliente}, ${datos.configuracionCalculoId})
+       ${datos.negocioCliente}, ${datos.configuracionCalculoId},
+       ${datos.usosCfdiHabilitados})
     RETURNING *
   `;
   return aPerfil(filas[0]);
@@ -92,7 +99,8 @@ export async function actualizarPerfil(
       activo = ${datos.activo},
       tipo_solicitud = ${datos.tipoSolicitud},
       negocio_cliente = ${datos.negocioCliente},
-      configuracion_calculo_id = ${datos.configuracionCalculoId}
+      configuracion_calculo_id = ${datos.configuracionCalculoId},
+      usos_cfdi_habilitados = ${datos.usosCfdiHabilitados}
     WHERE id = ${id}
     RETURNING *
   `;

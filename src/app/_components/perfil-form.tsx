@@ -2,13 +2,15 @@
 
 import { useActionState, useState } from "react";
 import { CONFIGURACIONES } from "@/lib/configuraciones";
-import { TIPOS_SOLICITUD } from "@/lib/opciones";
+import { TIPOS_SOLICITUD, USOS_CFDI } from "@/lib/opciones";
 import type { EstadoPerfil } from "@/app/actions";
 
 const ESTADO_INICIAL: EstadoPerfil = { status: "idle" };
 
 const inputClass =
   "mt-1.5 block w-full rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark shadow-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/20";
+
+const USOS_CFDI_CATALOGO = USOS_CFDI.filter((uso) => uso !== "Otro");
 
 export type ValoresPerfil = {
   nombre: string;
@@ -17,6 +19,7 @@ export type ValoresPerfil = {
   negocioCliente: string;
   configuracionCalculoId: string;
   activo: boolean;
+  usosCfdiHabilitados: string[] | null;
 };
 
 function normalizarSlugVista(valor: string): string {
@@ -43,6 +46,24 @@ export function PerfilForm({
   const [tipoSolicitud, setTipoSolicitud] = useState(
     valoresIniciales?.tipoSolicitud ?? TIPOS_SOLICITUD[1]
   );
+  const [usosCfdiHabilitados, setUsosCfdiHabilitados] = useState<Set<string>>(
+    () =>
+      new Set(
+        valoresIniciales?.usosCfdiHabilitados ?? USOS_CFDI_CATALOGO
+      )
+  );
+
+  function alternarUsoCfdi(uso: string) {
+    setUsosCfdiHabilitados((actual) => {
+      const siguiente = new Set(actual);
+      if (siguiente.has(uso)) {
+        siguiente.delete(uso);
+      } else {
+        siguiente.add(uso);
+      }
+      return siguiente;
+    });
+  }
 
   return (
     <form action={formAction} className="space-y-5">
@@ -141,6 +162,48 @@ export function PerfilForm({
           ))}
         </select>
       </label>
+
+      <div className="block">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-sage-dark">
+            Usos de CFDI que puede elegir este cliente
+          </span>
+          <div className="flex gap-3 text-xs font-medium text-forest">
+            <button
+              type="button"
+              onClick={() => setUsosCfdiHabilitados(new Set(USOS_CFDI_CATALOGO))}
+              className="underline underline-offset-2"
+            >
+              Marcar todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setUsosCfdiHabilitados(new Set())}
+              className="underline underline-offset-2"
+            >
+              Quitar todos
+            </button>
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-sage-dark/60">
+          &quot;Otro&quot; con escritura libre siempre está disponible, sin importar esta lista.
+        </p>
+        <div className="mt-2 grid max-h-56 grid-cols-1 gap-1.5 overflow-y-auto rounded-lg border border-sage-light/50 bg-cream/40 p-3 sm:grid-cols-2">
+          {USOS_CFDI_CATALOGO.map((uso) => (
+            <label key={uso} className="flex items-start gap-2 text-xs text-sage-dark">
+              <input
+                type="checkbox"
+                name="usosCfdiHabilitados"
+                value={uso}
+                checked={usosCfdiHabilitados.has(uso)}
+                onChange={() => alternarUsoCfdi(uso)}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+              />
+              <span>{uso}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       <label className="flex items-center gap-2">
         <input

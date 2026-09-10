@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { CONFIGURACIONES } from "@/lib/configuraciones";
-import { TIPOS_SOLICITUD } from "@/lib/opciones";
+import { TIPOS_SOLICITUD, USOS_CFDI } from "@/lib/opciones";
 import {
   actualizarPerfil,
   cambiarActivoPerfil,
@@ -60,6 +60,15 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
     return { error: "Selecciona una configuración de cálculo válida." };
   }
 
+  const usosCfdiSeleccionados = formData
+    .getAll("usosCfdiHabilitados")
+    .map(String)
+    .filter((valor) => (USOS_CFDI as readonly string[]).includes(valor));
+  // Si están todos marcados equivale a no restringir nada — se guarda como null.
+  const usosCfdiCatalogo = USOS_CFDI.filter((uso) => uso !== "Otro");
+  const usosCfdiHabilitados =
+    usosCfdiSeleccionados.length === usosCfdiCatalogo.length ? null : usosCfdiSeleccionados;
+
   return {
     slug,
     nombre,
@@ -67,6 +76,7 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
     tipoSolicitud,
     negocioCliente: negocioCliente || null,
     configuracionCalculoId,
+    usosCfdiHabilitados,
   };
 }
 

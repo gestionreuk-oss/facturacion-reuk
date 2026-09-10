@@ -42,6 +42,7 @@ export default async function SolicitudPorPerfilPage({
               tipoSolicitud: perfil.tipoSolicitud,
               negocioCliente: perfil.negocioCliente,
               configuracionCalculoId: perfil.configuracionCalculoId,
+              usosCfdiHabilitados: perfil.usosCfdiHabilitados,
             }}
           />
         </div>

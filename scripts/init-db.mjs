@@ -42,7 +42,9 @@ try {
       creado_en timestamptz NOT NULL DEFAULT now()
     )
   `;
-  console.log("Listo: la tabla \"perfiles\" existe.");
+  // NULL = todos los usos de CFDI habilitados (sin restricción).
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS usos_cfdi_habilitados text[]`;
+  console.log("Listo: la tabla \"perfiles\" existe y está al día.");
 } finally {
   await sql.end();
 }

@@ -14,12 +14,38 @@ export const REGIMENES_FISCALES = [
   "Otro",
 ] as const;
 
+/**
+ * Catálogo completo de Uso de CFDI del SAT. Cada perfil de cliente puede
+ * restringir cuáles de estos aparecen en su formulario (ver
+ * `usosCfdiHabilitados` en `src/lib/perfiles.ts`) — "Otro" siempre está
+ * disponible, sin importar la restricción, con escritura libre.
+ */
 export const USOS_CFDI = [
-  "G03 - Gastos en general",
   "G01 - Adquisición de mercancías",
-  "P01 - Por definir",
+  "G02 - Devoluciones descuentos o bonificaciones",
+  "G03 - Gastos en general",
   "I01 - Construcciones",
-  "D01 - Honorarios médicos",
+  "I02 - Mobiliario y equipo de oficina por inversiones",
+  "I03 - Equipo de transporte",
+  "I04 - Equipo de cómputo y accesorios",
+  "I05 - Dados troqueles moldes matrices y otros activos",
+  "I06 - Comunicaciones telefónicas",
+  "I07 - Comunicaciones satelitales",
+  "I08 - Otra maquinaria y equipo",
+  "D01 - Honorarios médicos dentales y gastos hospitalarios",
+  "D02 - Gastos médicos por incapacidad o discapacidad",
+  "D03 - Gastos funerales",
+  "D04 - Donativos",
+  "D05 - Intereses reales por créditos hipotecarios (casa habitación)",
+  "D06 - Aportaciones voluntarias al SAR",
+  "D07 - Primas por seguros de gastos médicos",
+  "D08 - Gastos de transportación escolar obligatoria",
+  "D09 - Depósitos en cuentas para el ahorro y pensiones",
+  "D10 - Pagos por servicios educativos (colegiaturas)",
+  "S01 - Sin efectos fiscales",
+  "CP01 - Pagos",
+  "CN01 - Nómina",
+  "P01 - Por definir",
   "Otro",
 ] as const;
 

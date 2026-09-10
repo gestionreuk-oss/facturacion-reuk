@@ -54,7 +54,11 @@ export type PerfilFijo = {
   tipoSolicitud: string;
   negocioCliente: string | null;
   configuracionCalculoId: string;
+  usosCfdiHabilitados: string[] | null;
 };
+
+const conceptoInputClass =
+  "min-w-0 flex-1 rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/20";
 
 type ConceptoItem = { id: string; concepto: string; monto: string };
 
@@ -72,11 +76,18 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
   );
   const [modoFiscal, setModoFiscal] = useState<"manual" | "constancia">("manual");
   const [conceptos, setConceptos] = useState<ConceptoItem[]>([nuevoConceptoVacio()]);
+  const [usoCfdi, setUsoCfdi] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const tipoEfectivo = perfilFijo?.tipoSolicitud ?? tipoSolicitud;
   const esDirectoReuk = tipoEfectivo === "Cliente directo de REUK";
   const esClienteFinal = tipoEfectivo === "Cliente final de un cliente REUK";
+
+  const usosCfdiVisibles = useMemo(() => {
+    const habilitados = perfilFijo?.usosCfdiHabilitados;
+    if (!habilitados) return USOS_CFDI;
+    return USOS_CFDI.filter((opcion) => opcion === "Otro" || habilitados.includes(opcion));
+  }, [perfilFijo]);
 
   const configuracion = buscarConfiguracion(configuracionId);
   const subtotal = useMemo(
@@ -215,7 +226,11 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
             name="razonSocial"
             required
             className={inputClass}
-            placeholder="Como aparece en tu constancia de situación fiscal"
+            placeholder={
+              esDirectoReuk
+                ? "Como aparece en su constancia de situación fiscal"
+                : "Como aparece en tu constancia de situación fiscal"
+            }
           />
         </Campo>
 
@@ -229,7 +244,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
                 : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
             }`}
           >
-            Escribir mis datos
+            {esDirectoReuk ? "Escribir sus datos" : "Escribir mis datos"}
           </button>
           <button
             type="button"
@@ -240,7 +255,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
                 : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
             }`}
           >
-            Subir mi constancia fiscal
+            {esDirectoReuk ? "Subir su constancia fiscal" : "Subir mi constancia fiscal"}
           </button>
         </div>
         <input type="hidden" name="modoFiscal" value={modoFiscal} />
@@ -285,8 +300,12 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
           </>
         ) : (
           <Campo
-            label="Constancia de situación fiscal"
-            hint="PDF o foto legible. Tomamos tu RFC, régimen y código postal de ahí."
+            label={esDirectoReuk ? "Constancia de situación fiscal del cliente" : "Constancia de situación fiscal"}
+            hint={
+              esDirectoReuk
+                ? "PDF o foto legible. Tomamos su RFC, régimen y código postal de ahí."
+                : "PDF o foto legible. Tomamos tu RFC, régimen y código postal de ahí."
+            }
           >
             <input
               type="file"
@@ -299,17 +318,34 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
         )}
 
         <Campo label="Uso de CFDI">
-          <select name="usoCfdi" required defaultValue="" className={inputClass}>
+          <select
+            name="usoCfdi"
+            required
+            value={usoCfdi}
+            onChange={(e) => setUsoCfdi(e.target.value)}
+            className={inputClass}
+          >
             <option value="" disabled>
               Selecciona el uso
             </option>
-            {USOS_CFDI.map((opcion) => (
+            {usosCfdiVisibles.map((opcion) => (
               <option key={opcion} value={opcion}>
                 {opcion}
               </option>
             ))}
           </select>
         </Campo>
+        {usoCfdi === "Otro" ? (
+          <Campo label="Especifica el uso de CFDI">
+            <input
+              type="text"
+              name="usoCfdiOtro"
+              required
+              className={inputClass}
+              placeholder="Escribe el uso de CFDI"
+            />
+          </Campo>
+        ) : null}
       </fieldset>
 
       <fieldset className="space-y-5">
@@ -346,7 +382,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
                 value={item.concepto}
                 onChange={(e) => actualizarConcepto(item.id, "concepto", e.target.value)}
                 placeholder="Qué se está facturando"
-                className={inputClass}
+                className={conceptoInputClass}
               />
               <input
                 type="number"
@@ -356,7 +392,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
                 step="0.01"
                 inputMode="decimal"
                 placeholder="0.00"
-                className={`${inputClass} w-36 shrink-0 tabular-nums`}
+                className="w-36 shrink-0 rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition tabular-nums focus:border-forest focus:ring-2 focus:ring-forest/20"
               />
               <button
                 type="button"

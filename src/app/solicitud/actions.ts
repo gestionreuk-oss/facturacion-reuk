@@ -32,6 +32,7 @@ export async function crearSolicitud(
   const rfc = requerido(formData, "rfc").toUpperCase();
   const regimenFiscal = requerido(formData, "regimenFiscal");
   const usoCfdi = requerido(formData, "usoCfdi");
+  const usoCfdiOtro = requerido(formData, "usoCfdiOtro");
   const codigoPostal = requerido(formData, "codigoPostal");
   const correo = requerido(formData, "correo");
   const telefono = requerido(formData, "telefono");
@@ -58,6 +59,9 @@ export async function crearSolicitud(
   }
   if (!USOS_CFDI.includes(usoCfdi as (typeof USOS_CFDI)[number])) {
     return { status: "error", message: "Selecciona un uso de CFDI válido." };
+  }
+  if (usoCfdi === "Otro" && !usoCfdiOtro) {
+    return { status: "error", message: "Especifica el uso de CFDI." };
   }
   if (!FORMAS_PAGO.includes(formaPago as (typeof FORMAS_PAGO)[number])) {
     return { status: "error", message: "Selecciona una forma de pago válida." };
@@ -133,6 +137,7 @@ export async function crearSolicitud(
       rfc: modoFiscal === "constancia" ? "" : rfc,
       regimenFiscal: modoFiscal === "constancia" ? "" : regimenFiscal,
       usoCfdi,
+      usoCfdiOtro: usoCfdi === "Otro" ? usoCfdiOtro : "",
       codigoPostal: modoFiscal === "constancia" ? "" : codigoPostal,
       correo,
       telefono,

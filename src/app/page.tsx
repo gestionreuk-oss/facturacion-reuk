@@ -85,9 +85,15 @@ export default async function AdminPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <code className="whitespace-nowrap rounded bg-cream px-1.5 py-0.5 text-xs text-sage-dark">
+                          <a
+                            href={urlPerfil}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Abrir el formulario en una pestaña nueva"
+                            className="whitespace-nowrap rounded bg-cream px-1.5 py-0.5 text-xs text-sage-dark underline decoration-dotted underline-offset-2 transition hover:text-forest"
+                          >
                             {urlPerfil}
-                          </code>
+                          </a>
                           <CopyLinkButton url={urlPerfil} />
                         </div>
                       </td>

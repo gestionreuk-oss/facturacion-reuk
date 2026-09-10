@@ -7,6 +7,7 @@ export type SolicitudFactura = {
   rfc: string;
   regimenFiscal: string;
   usoCfdi: string;
+  usoCfdiOtro: string;
   codigoPostal: string;
   correo: string;
   telefono: string;
@@ -88,6 +89,9 @@ export async function crearSolicitudEnNotion(data: SolicitudFactura) {
   }
   if (data.constanciaFiscalUrl) {
     properties["Constancia Fiscal"] = { url: data.constanciaFiscalUrl };
+  }
+  if (data.usoCfdiOtro) {
+    properties["Uso de CFDI (Otro)"] = { rich_text: richText(data.usoCfdiOtro) };
   }
 
   const res = await fetch("https://api.notion.com/v1/pages", {
