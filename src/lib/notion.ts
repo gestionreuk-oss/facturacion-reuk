@@ -21,6 +21,8 @@ export type SolicitudFactura = {
   retencionIva: number;
   totalFactura: number;
   netoAPagar: number;
+  comprobantePagoUrl: string;
+  constanciaFiscalUrl: string;
 };
 
 type NotionRichText = { text: { content: string } }[];
@@ -46,11 +48,7 @@ export async function crearSolicitudEnNotion(data: SolicitudFactura) {
 
   const properties: Record<string, unknown> = {
     "Solicitante / Razón Social": { title: richText(data.razonSocial) },
-    RFC: { rich_text: richText(data.rfc) },
-    "Régimen Fiscal": { select: { name: data.regimenFiscal } },
     "Uso de CFDI": { select: { name: data.usoCfdi } },
-    "Código Postal": { rich_text: richText(data.codigoPostal) },
-    Correo: { email: data.correo },
     Concepto: { rich_text: richText(data.concepto) },
     Subtotal: { number: data.subtotal },
     IVA: { number: data.iva },
@@ -63,6 +61,20 @@ export async function crearSolicitudEnNotion(data: SolicitudFactura) {
     Estatus: { select: { name: "Recibida" } },
   };
 
+  // Datos fiscales manuales — vacíos cuando el solicitante subió su
+  // constancia en vez de escribirlos (ver "Constancia Fiscal" abajo).
+  if (data.rfc) {
+    properties.RFC = { rich_text: richText(data.rfc) };
+  }
+  if (data.regimenFiscal) {
+    properties["Régimen Fiscal"] = { select: { name: data.regimenFiscal } };
+  }
+  if (data.codigoPostal) {
+    properties["Código Postal"] = { rich_text: richText(data.codigoPostal) };
+  }
+  if (data.correo) {
+    properties.Correo = { email: data.correo };
+  }
   if (data.telefono) {
     properties["Teléfono"] = { phone_number: data.telefono };
   }
@@ -70,6 +82,12 @@ export async function crearSolicitudEnNotion(data: SolicitudFactura) {
     properties["Negocio / Cliente (nombre)"] = {
       rich_text: richText(data.negocioCliente),
     };
+  }
+  if (data.comprobantePagoUrl) {
+    properties["Comprobante de Pago"] = { url: data.comprobantePagoUrl };
+  }
+  if (data.constanciaFiscalUrl) {
+    properties["Constancia Fiscal"] = { url: data.constanciaFiscalUrl };
   }
 
   const res = await fetch("https://api.notion.com/v1/pages", {

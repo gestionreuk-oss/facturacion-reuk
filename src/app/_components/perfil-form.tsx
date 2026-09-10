@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { CONFIGURACIONES } from "@/lib/configuraciones";
 import { TIPOS_SOLICITUD } from "@/lib/opciones";
-import type { EstadoPerfil } from "./actions";
+import type { EstadoPerfil } from "@/app/actions";
 
 const ESTADO_INICIAL: EstadoPerfil = { status: "idle" };
 

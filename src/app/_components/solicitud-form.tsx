@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useRef, useState } from "react";
-import { crearSolicitud, type EstadoSolicitud } from "./actions";
+import { crearSolicitud, type EstadoSolicitud } from "@/app/solicitud/actions";
 import { calcularNeto } from "@/lib/calculo";
 import { buscarConfiguracion, configuracionesActivas } from "@/lib/configuraciones";
 import {
@@ -44,8 +44,10 @@ function Campo({
 const inputClass =
   "mt-1.5 block w-full rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/20";
 
-const legendClass =
-  "text-xs font-semibold uppercase tracking-wider text-forest";
+const archivoClass =
+  "mt-1.5 block w-full rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sm text-sage-dark shadow-sm outline-none transition file:mr-3 file:rounded-md file:border-0 file:bg-forest file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-cream";
+
+const legendClass = "text-xs font-semibold uppercase tracking-wider text-forest";
 
 export type PerfilFijo = {
   nombre: string;
@@ -53,6 +55,12 @@ export type PerfilFijo = {
   negocioCliente: string | null;
   configuracionCalculoId: string;
 };
+
+type ConceptoItem = { id: string; concepto: string; monto: string };
+
+function nuevoConceptoVacio(): ConceptoItem {
+  return { id: Math.random().toString(36).slice(2), concepto: "", monto: "" };
+}
 
 export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
   const [estado, formAction, pending] = useActionState(crearSolicitud, ESTADO_INICIAL);
@@ -62,11 +70,27 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
   const [configuracionId, setConfiguracionId] = useState<string>(
     perfilFijo?.configuracionCalculoId ?? CONFIGURACIONES_ACTIVAS[0]?.id ?? ""
   );
-  const [montoTexto, setMontoTexto] = useState("");
+  const [modoFiscal, setModoFiscal] = useState<"manual" | "constancia">("manual");
+  const [conceptos, setConceptos] = useState<ConceptoItem[]>([nuevoConceptoVacio()]);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const tipoEfectivo = perfilFijo?.tipoSolicitud ?? tipoSolicitud;
+  const esDirectoReuk = tipoEfectivo === "Cliente directo de REUK";
+  const esClienteFinal = tipoEfectivo === "Cliente final de un cliente REUK";
+
   const configuracion = buscarConfiguracion(configuracionId);
-  const subtotal = Number(montoTexto) || 0;
+  const subtotal = useMemo(
+    () => conceptos.reduce((acc, c) => acc + (Number(c.monto) || 0), 0),
+    [conceptos]
+  );
+  const conceptoCombinado = useMemo(
+    () =>
+      conceptos
+        .filter((c) => c.concepto.trim() || Number(c.monto) > 0)
+        .map((c) => `${c.concepto.trim() || "(sin descripción)"} — ${pesos.format(Number(c.monto) || 0)}`)
+        .join("\n"),
+    [conceptos]
+  );
   const desglose = useMemo(
     () => (configuracion ? calcularNeto(subtotal, configuracion) : null),
     [configuracion, subtotal]
@@ -76,6 +100,18 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
     (configuracion.aplicaIva ||
       configuracion.aplicaRetencionIsr ||
       configuracion.aplicaRetencionIva);
+
+  function actualizarConcepto(id: string, campo: "concepto" | "monto", valor: string) {
+    setConceptos((prev) => prev.map((c) => (c.id === id ? { ...c, [campo]: valor } : c)));
+  }
+
+  function agregarConcepto() {
+    setConceptos((prev) => [...prev, nuevoConceptoVacio()]);
+  }
+
+  function quitarConcepto(id: string) {
+    setConceptos((prev) => (prev.length > 1 ? prev.filter((c) => c.id !== id) : prev));
+  }
 
   if (estado.status === "success") {
     return (
@@ -154,7 +190,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
               ))}
             </select>
           </Campo>
-          {tipoSolicitud === "Cliente final de un cliente REUK" ? (
+          {esClienteFinal ? (
             <Campo
               label="¿A qué negocio le compraste?"
               hint="Escribe el nombre tal como lo conoces (ej. razón social o nombre comercial)."
@@ -182,68 +218,102 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
             placeholder="Como aparece en tu constancia de situación fiscal"
           />
         </Campo>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Campo label="RFC">
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setModoFiscal("manual")}
+            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+              modoFiscal === "manual"
+                ? "bg-forest text-cream"
+                : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
+            }`}
+          >
+            Escribir mis datos
+          </button>
+          <button
+            type="button"
+            onClick={() => setModoFiscal("constancia")}
+            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+              modoFiscal === "constancia"
+                ? "bg-forest text-cream"
+                : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
+            }`}
+          >
+            Subir mi constancia fiscal
+          </button>
+        </div>
+        <input type="hidden" name="modoFiscal" value={modoFiscal} />
+
+        {modoFiscal === "manual" ? (
+          <>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Campo label="RFC">
+                <input
+                  type="text"
+                  name="rfc"
+                  required
+                  maxLength={13}
+                  className={`${inputClass} uppercase`}
+                  placeholder="XAXX010101000"
+                />
+              </Campo>
+              <Campo label="Código postal fiscal">
+                <input
+                  type="text"
+                  name="codigoPostal"
+                  required
+                  inputMode="numeric"
+                  maxLength={5}
+                  className={inputClass}
+                  placeholder="00000"
+                />
+              </Campo>
+            </div>
+            <Campo label="Régimen fiscal">
+              <select name="regimenFiscal" required defaultValue="" className={inputClass}>
+                <option value="" disabled>
+                  Selecciona tu régimen
+                </option>
+                {REGIMENES_FISCALES.map((opcion) => (
+                  <option key={opcion} value={opcion}>
+                    {opcion}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+          </>
+        ) : (
+          <Campo
+            label="Constancia de situación fiscal"
+            hint="PDF o foto legible. Tomamos tu RFC, régimen y código postal de ahí."
+          >
             <input
-              type="text"
-              name="rfc"
+              type="file"
+              name="constanciaFiscal"
               required
-              maxLength={13}
-              className={`${inputClass} uppercase`}
-              placeholder="XAXX010101000"
+              accept="application/pdf,image/*"
+              className={archivoClass}
             />
           </Campo>
-          <Campo label="Código postal fiscal">
-            <input
-              type="text"
-              name="codigoPostal"
-              required
-              inputMode="numeric"
-              maxLength={5}
-              className={inputClass}
-              placeholder="00000"
-            />
-          </Campo>
-        </div>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Campo label="Régimen fiscal">
-            <select name="regimenFiscal" required defaultValue="" className={inputClass}>
-              <option value="" disabled>
-                Selecciona tu régimen
+        )}
+
+        <Campo label="Uso de CFDI">
+          <select name="usoCfdi" required defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              Selecciona el uso
+            </option>
+            {USOS_CFDI.map((opcion) => (
+              <option key={opcion} value={opcion}>
+                {opcion}
               </option>
-              {REGIMENES_FISCALES.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {opcion}
-                </option>
-              ))}
-            </select>
-          </Campo>
-          <Campo label="Uso de CFDI">
-            <select name="usoCfdi" required defaultValue="" className={inputClass}>
-              <option value="" disabled>
-                Selecciona el uso
-              </option>
-              {USOS_CFDI.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {opcion}
-                </option>
-              ))}
-            </select>
-          </Campo>
-        </div>
+            ))}
+          </select>
+        </Campo>
       </fieldset>
 
       <fieldset className="space-y-5">
         <legend className={legendClass}>Detalle de la factura</legend>
-        <Campo label="Concepto">
-          <input
-            type="text"
-            name="concepto"
-            required
-            className={inputClass}
-            placeholder="Qué se está facturando"
-          />
-        </Campo>
 
         {perfilFijo ? (
           <input type="hidden" name="configuracionId" value={configuracionId} />
@@ -265,34 +335,63 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
           </Campo>
         )}
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Campo label={tieneDesglose ? "Monto (subtotal, antes de IVA)" : "Monto total (MXN)"}>
-            <input
-              type="number"
-              name="monto"
-              required
-              min="0.01"
-              step="0.01"
-              inputMode="decimal"
-              className={`${inputClass} tabular-nums`}
-              placeholder="0.00"
-              value={montoTexto}
-              onChange={(e) => setMontoTexto(e.target.value)}
-            />
-          </Campo>
-          <Campo label="Forma de pago">
-            <select name="formaPago" required defaultValue="" className={inputClass}>
-              <option value="" disabled>
-                Selecciona una opción
-              </option>
-              {FORMAS_PAGO.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {opcion}
-                </option>
-              ))}
-            </select>
-          </Campo>
+        <div className="space-y-3">
+          <span className="text-sm font-medium text-sage-dark">
+            {tieneDesglose ? "Conceptos (montos antes de IVA)" : "Conceptos"}
+          </span>
+          {conceptos.map((item) => (
+            <div key={item.id} className="flex gap-2">
+              <input
+                type="text"
+                value={item.concepto}
+                onChange={(e) => actualizarConcepto(item.id, "concepto", e.target.value)}
+                placeholder="Qué se está facturando"
+                className={inputClass}
+              />
+              <input
+                type="number"
+                value={item.monto}
+                onChange={(e) => actualizarConcepto(item.id, "monto", e.target.value)}
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="0.00"
+                className={`${inputClass} w-36 shrink-0 tabular-nums`}
+              />
+              <button
+                type="button"
+                onClick={() => quitarConcepto(item.id)}
+                disabled={conceptos.length === 1}
+                aria-label="Quitar este concepto"
+                className="shrink-0 rounded-lg border border-sage-light/50 px-3 text-sage-dark transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={agregarConcepto}
+            className="rounded-lg border border-dashed border-sage-light/60 px-3.5 py-2 text-sm font-medium text-forest transition hover:border-forest/50"
+          >
+            + Agregar concepto
+          </button>
         </div>
+        <input type="hidden" name="concepto" value={conceptoCombinado} />
+        <input type="hidden" name="monto" value={subtotal || ""} />
+
+        <Campo label="Forma de pago">
+          <select name="formaPago" required defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              Selecciona una opción
+            </option>
+            {FORMAS_PAGO.map((opcion) => (
+              <option key={opcion} value={opcion}>
+                {opcion}
+              </option>
+            ))}
+          </select>
+        </Campo>
 
         {tieneDesglose && desglose && subtotal > 0 ? (
           <div className="rounded-lg border border-sage-light/40 bg-cream/60 px-4 py-3.5 text-sm">
@@ -328,15 +427,40 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
         ) : null}
       </fieldset>
 
+      {esClienteFinal ? (
+        <fieldset className="space-y-5">
+          <legend className={legendClass}>Comprobante de pago</legend>
+          <Campo label="Sube tu comprobante (opcional)" hint="Foto o captura de la transferencia/pago.">
+            <input
+              type="file"
+              name="comprobantePago"
+              accept="image/*,application/pdf"
+              className={archivoClass}
+            />
+          </Campo>
+        </fieldset>
+      ) : null}
+
       <fieldset className="space-y-5">
         <legend className={legendClass}>Datos de contacto</legend>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Campo label="Correo" hint="Aquí te avisamos cuando esté lista tu factura.">
-            <input type="email" name="correo" required className={inputClass} placeholder="tu@correo.com" />
+          <Campo
+            label={esDirectoReuk ? "Correo del cliente" : "Correo"}
+            hint="Aquí te avisamos cuando esté lista tu factura."
+          >
+            <input
+              type="email"
+              name="correo"
+              required={!esDirectoReuk}
+              className={inputClass}
+              placeholder="tu@correo.com"
+            />
           </Campo>
-          <Campo label="Teléfono (opcional)">
-            <input type="tel" name="telefono" className={inputClass} placeholder="10 dígitos" />
-          </Campo>
+          {esDirectoReuk ? null : (
+            <Campo label="Teléfono (opcional)">
+              <input type="tel" name="telefono" className={inputClass} placeholder="10 dígitos" />
+            </Campo>
+          )}
         </div>
       </fieldset>
 

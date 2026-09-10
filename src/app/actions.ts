@@ -1,118 +1,135 @@
 "use server";
 
-import { calcularNeto } from "@/lib/calculo";
-import { buscarConfiguracion } from "@/lib/configuraciones";
-import { crearSolicitudEnNotion } from "@/lib/notion";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { CONFIGURACIONES } from "@/lib/configuraciones";
+import { TIPOS_SOLICITUD } from "@/lib/opciones";
 import {
-  FORMAS_PAGO,
-  REGIMENES_FISCALES,
-  TIPOS_SOLICITUD,
-  USOS_CFDI,
-} from "@/lib/opciones";
+  actualizarPerfil,
+  cambiarActivoPerfil,
+  crearPerfil,
+  eliminarPerfil,
+  esErrorSlugDuplicado,
+  type DatosPerfil,
+} from "@/lib/perfiles";
+import { cerrarSesionAdmin, haySesionAdmin } from "@/lib/session";
 
-export type EstadoSolicitud =
+export type EstadoPerfil =
   | { status: "idle" }
-  | { status: "error"; message: string }
-  | { status: "success"; folio: string | null };
+  | { status: "error"; message: string };
 
-const RFC_REGEX = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i;
-
-function requerido(formData: FormData, campo: string): string {
-  const valor = formData.get(campo);
-  return typeof valor === "string" ? valor.trim() : "";
+async function exigirSesion() {
+  if (!(await haySesionAdmin())) {
+    redirect("/login");
+  }
 }
 
-export async function crearSolicitud(
-  _prevState: EstadoSolicitud,
-  formData: FormData
-): Promise<EstadoSolicitud> {
-  const razonSocial = requerido(formData, "razonSocial");
-  const rfc = requerido(formData, "rfc").toUpperCase();
-  const regimenFiscal = requerido(formData, "regimenFiscal");
-  const usoCfdi = requerido(formData, "usoCfdi");
-  const codigoPostal = requerido(formData, "codigoPostal");
-  const correo = requerido(formData, "correo");
-  const telefono = requerido(formData, "telefono");
-  const concepto = requerido(formData, "concepto");
-  const montoRaw = requerido(formData, "monto");
-  const formaPago = requerido(formData, "formaPago");
-  const tipoSolicitud = requerido(formData, "tipoSolicitud");
-  const negocioCliente = requerido(formData, "negocioCliente");
-  const configuracionId = requerido(formData, "configuracionId");
+function normalizarSlug(valor: string): string {
+  return valor
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // quita acentos (diacríticos tras NFD)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
-  if (!razonSocial || !rfc || !regimenFiscal || !usoCfdi || !codigoPostal) {
-    return { status: "error", message: "Faltan datos fiscales obligatorios." };
-  }
-  if (!RFC_REGEX.test(rfc)) {
-    return {
-      status: "error",
-      message: "El RFC no tiene un formato válido. Revísalo e intenta de nuevo.",
-    };
-  }
-  if (!/^\d{5}$/.test(codigoPostal)) {
-    return { status: "error", message: "El código postal debe tener 5 dígitos." };
-  }
-  if (!correo || !correo.includes("@")) {
-    return { status: "error", message: "Escribe un correo válido." };
-  }
-  if (!concepto) {
-    return { status: "error", message: "Describe el concepto de la factura." };
-  }
-  const monto = Number(montoRaw);
-  if (!montoRaw || Number.isNaN(monto) || monto <= 0) {
-    return { status: "error", message: "El monto debe ser un número mayor a 0." };
-  }
-  if (!REGIMENES_FISCALES.includes(regimenFiscal as (typeof REGIMENES_FISCALES)[number])) {
-    return { status: "error", message: "Selecciona un régimen fiscal válido." };
-  }
-  if (!USOS_CFDI.includes(usoCfdi as (typeof USOS_CFDI)[number])) {
-    return { status: "error", message: "Selecciona un uso de CFDI válido." };
-  }
-  if (!FORMAS_PAGO.includes(formaPago as (typeof FORMAS_PAGO)[number])) {
-    return { status: "error", message: "Selecciona una forma de pago válida." };
-  }
+function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const slugCrudo = String(formData.get("slug") ?? "");
+  const tipoSolicitud = String(formData.get("tipoSolicitud") ?? "");
+  const negocioCliente = String(formData.get("negocioCliente") ?? "").trim();
+  const configuracionCalculoId = String(formData.get("configuracionCalculoId") ?? "");
+  const activo = formData.get("activo") === "on";
+
+  if (!nombre) return { error: "El nombre del perfil es obligatorio." };
+
+  const slug = normalizarSlug(slugCrudo || nombre);
+  if (!slug) return { error: "El link (slug) no puede quedar vacío." };
+
   if (!TIPOS_SOLICITUD.includes(tipoSolicitud as (typeof TIPOS_SOLICITUD)[number])) {
-    return { status: "error", message: "Selecciona a quién va dirigida la solicitud." };
+    return { error: "Selecciona un tipo de solicitud válido." };
   }
   if (tipoSolicitud === "Cliente final de un cliente REUK" && !negocioCliente) {
     return {
-      status: "error",
-      message: "Escribe el nombre del negocio al que le compraste.",
+      error:
+        'Escribe el nombre del negocio — obligatorio cuando el tipo es "cliente final".',
     };
   }
-  const configuracion = buscarConfiguracion(configuracionId);
-  if (!configuracion || !configuracion.activa) {
-    return { status: "error", message: "Selecciona una configuración de cálculo válida." };
+  if (!CONFIGURACIONES.some((c) => c.id === configuracionCalculoId)) {
+    return { error: "Selecciona una configuración de cálculo válida." };
   }
 
-  // El desglose SIEMPRE se recalcula aquí, en el servidor, a partir del
-  // subtotal y del perfil — nunca se confía en un desglose que venga del
-  // formulario, para que nadie pueda alterarlo desde el navegador.
-  const desglose = calcularNeto(monto, configuracion);
+  return {
+    slug,
+    nombre,
+    activo,
+    tipoSolicitud,
+    negocioCliente: negocioCliente || null,
+    configuracionCalculoId,
+  };
+}
+
+export async function crearPerfilAction(
+  _prevState: EstadoPerfil,
+  formData: FormData
+): Promise<EstadoPerfil> {
+  await exigirSesion();
+
+  const datos = leerDatosPerfil(formData);
+  if ("error" in datos) return { status: "error", message: datos.error };
 
   try {
-    const { folio } = await crearSolicitudEnNotion({
-      razonSocial,
-      rfc,
-      regimenFiscal,
-      usoCfdi,
-      codigoPostal,
-      correo,
-      telefono,
-      concepto,
-      formaPago,
-      tipoSolicitud,
-      negocioCliente,
-      configuracionNombre: configuracion.nombre,
-      ...desglose,
-    });
-    return { status: "success", folio };
+    await crearPerfil(datos);
   } catch (error) {
-    console.error("Error creando solicitud en Notion:", error);
-    return {
-      status: "error",
-      message:
-        "No pudimos enviar tu solicitud por un problema técnico. Intenta de nuevo en unos minutos.",
-    };
+    if (esErrorSlugDuplicado(error)) {
+      return { status: "error", message: `Ya existe un perfil con el link "${datos.slug}".` };
+    }
+    console.error("Error creando perfil:", error);
+    return { status: "error", message: "No se pudo crear el perfil. Intenta de nuevo." };
   }
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+export async function actualizarPerfilAction(
+  id: string,
+  _prevState: EstadoPerfil,
+  formData: FormData
+): Promise<EstadoPerfil> {
+  await exigirSesion();
+
+  const datos = leerDatosPerfil(formData);
+  if ("error" in datos) return { status: "error", message: datos.error };
+
+  try {
+    await actualizarPerfil(id, datos);
+  } catch (error) {
+    if (esErrorSlugDuplicado(error)) {
+      return { status: "error", message: `Ya existe un perfil con el link "${datos.slug}".` };
+    }
+    console.error("Error actualizando perfil:", error);
+    return { status: "error", message: "No se pudo guardar el perfil. Intenta de nuevo." };
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+export async function cambiarActivoAction(id: string, activo: boolean): Promise<void> {
+  await exigirSesion();
+  await cambiarActivoPerfil(id, activo);
+  revalidatePath("/");
+}
+
+export async function eliminarPerfilAction(id: string): Promise<void> {
+  await exigirSesion();
+  await eliminarPerfil(id);
+  revalidatePath("/");
+}
+
+export async function cerrarSesionAction(): Promise<void> {
+  await cerrarSesionAdmin();
+  redirect("/admin/login");
 }

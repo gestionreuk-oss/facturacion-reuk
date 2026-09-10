@@ -1,20 +1,7 @@
 import Image from "next/image";
-import { notFound } from "next/navigation";
-import { obtenerPerfilActivoPorSlug } from "@/lib/perfiles";
 import { SolicitudForm } from "@/app/_components/solicitud-form";
 
-export default async function SolicitudPorPerfilPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const perfil = await obtenerPerfilActivoPorSlug(slug);
-
-  if (!perfil) {
-    notFound();
-  }
-
+export default function Home() {
   return (
     <main className="flex min-h-screen items-start justify-center bg-cream px-4 py-12 sm:py-16">
       <div className="w-full max-w-xl">
@@ -28,25 +15,21 @@ export default async function SolicitudPorPerfilPage({
             className="h-12 w-auto"
           />
           <h1 className="mt-7 font-serif text-3xl font-medium text-forest sm:text-4xl">
-            Solicitud de factura — {perfil.nombre}
+            Solicitud de factura
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-sage-dark/80">
-            Llena tus datos fiscales y te la haremos llegar por correo.
+            Llena tus datos fiscales y te la haremos llegar por correo. Usa
+            este mismo formulario si le compraste a un negocio asesorado por
+            nosotros, o si nos solicitas la factura directo a REUK.
           </p>
         </header>
 
         <div className="rounded-2xl border border-sage-light/40 bg-white p-6 shadow-[0_20px_45px_-25px_rgba(26,65,33,0.35)] sm:p-8">
-          <SolicitudForm
-            perfilFijo={{
-              nombre: perfil.nombre,
-              tipoSolicitud: perfil.tipoSolicitud,
-              negocioCliente: perfil.negocioCliente,
-              configuracionCalculoId: perfil.configuracionCalculoId,
-            }}
-          />
+          <SolicitudForm />
         </div>
 
         <p className="mt-6 text-center text-xs text-sage-light">
+          {/* TODO: pon aquí el correo o WhatsApp de contacto que quieras mostrar públicamente */}
           ¿Dudas con tu solicitud? Escríbenos a{" "}
           <a
             href="mailto:contacto@reuk.com.mx"

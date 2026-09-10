@@ -70,6 +70,32 @@ export const CONFIGURACIONES: ConfiguracionCalculo[] = [
     nota: "Retención ISR del 10%, sin retención de IVA. Verifica caso por caso.",
   },
   {
+    id: "resico-sin-retencion-iva",
+    nombre: "Servicios a RESICO — IVA 16% + retención ISR 1.25%",
+    activa: true,
+    aplicaIva: true,
+    tasaIva: 0.16,
+    aplicaRetencionIsr: true,
+    tasaRetencionIsr: 0.0125,
+    aplicaRetencionIva: false,
+    tasaRetencionIva: 0,
+    nota:
+      "Retención ISR de 1.25% sobre el subtotal — la tasa que aplica a personas físicas en RESICO, sin retención de IVA. Confirma que el régimen del solicitante sea RESICO antes de usarla.",
+  },
+  {
+    id: "resico-con-retencion-iva",
+    nombre: "Servicios a RESICO — IVA 16% + ISR 1.25% + IVA 10.6667%",
+    activa: true,
+    aplicaIva: true,
+    tasaIva: 0.16,
+    aplicaRetencionIsr: true,
+    tasaRetencionIsr: 0.0125,
+    aplicaRetencionIva: true,
+    tasaRetencionIva: 0.106667,
+    nota:
+      "Igual que la anterior, pero además retiene 2/3 del IVA trasladado (10.6667%). Úsala cuando el cliente también deba retener IVA a este RESICO.",
+  },
+  {
     id: "tasa-fronteriza",
     nombre: "IVA tasa fronteriza 8%",
     activa: false,

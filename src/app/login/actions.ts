@@ -16,5 +16,5 @@ export async function iniciarSesion(
   }
 
   await crearSesionAdmin();
-  redirect("/admin");
+  redirect("/");
 }

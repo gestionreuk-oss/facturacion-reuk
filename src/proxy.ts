@@ -17,24 +17,24 @@ async function sesionValida(token: string | undefined): Promise<boolean> {
 }
 
 /**
- * Chequeo optimista (solo la cookie, sin tocar la base de datos) para
- * mantener /admin fuera del alcance de quien no inició sesión. Cada Server
- * Action del panel vuelve a verificar la sesión por su cuenta — este proxy
- * es la primera barrera, no la única.
+ * El panel vive en la URL base de la app (/, /nuevo, /[id]/editar). Todo lo
+ * demás es público: /login (para no bloquearse a sí mismo), /solicitud (el
+ * formulario genérico) y /f/* (el link propio de cada cliente).
+ *
+ * Chequeo optimista (solo la cookie, sin tocar la base de datos) — cada
+ * Server Action del panel vuelve a verificar la sesión por su cuenta, este
+ * proxy es la primera barrera, no la única.
  */
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (pathname === "/admin/login") {
-    return NextResponse.next();
-  }
-
   const token = request.cookies.get(NOMBRE_COOKIE)?.value;
   if (!(await sesionValida(token))) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: [
+    "/((?!login|solicitud|f/|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|svg|ico|webmanifest)$).*)",
+  ],
 };
