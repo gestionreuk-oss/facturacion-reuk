@@ -39,7 +39,6 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
   const slugCrudo = String(formData.get("slug") ?? "");
   const tipoSolicitud = String(formData.get("tipoSolicitud") ?? "");
   const negocioCliente = String(formData.get("negocioCliente") ?? "").trim();
-  const configuracionCalculoId = String(formData.get("configuracionCalculoId") ?? "");
   const activo = formData.get("activo") === "on";
 
   if (!nombre) return { error: "El nombre del perfil es obligatorio." };
@@ -56,8 +55,12 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
         'Escribe el nombre del negocio — obligatorio cuando el tipo es "cliente final".',
     };
   }
-  if (!CONFIGURACIONES.some((c) => c.id === configuracionCalculoId)) {
-    return { error: "Selecciona una configuración de cálculo válida." };
+  const configuracionesCalculoIds = formData
+    .getAll("configuracionesCalculoIds")
+    .map(String)
+    .filter((id) => CONFIGURACIONES.some((c) => c.id === id));
+  if (configuracionesCalculoIds.length === 0) {
+    return { error: "Selecciona al menos una configuración de cálculo." };
   }
 
   const usosCfdiSeleccionados = formData
@@ -77,7 +80,7 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
     activo,
     tipoSolicitud,
     negocioCliente: negocioCliente || null,
-    configuracionCalculoId,
+    configuracionesCalculoIds,
     usosCfdiHabilitados,
     comprobantePagoObligatorio,
   };

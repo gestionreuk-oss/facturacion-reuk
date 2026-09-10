@@ -3,7 +3,11 @@
 import { useActionState, useMemo, useRef, useState } from "react";
 import { crearSolicitud, type EstadoSolicitud } from "@/app/solicitud/actions";
 import { calcularNeto } from "@/lib/calculo";
-import { buscarConfiguracion, configuracionesActivas } from "@/lib/configuraciones";
+import {
+  buscarConfiguracion,
+  configuracionesActivas,
+  type ConfiguracionCalculo,
+} from "@/lib/configuraciones";
 import {
   FORMA_PAGO_PPD,
   FORMAS_PAGO_PUE,
@@ -55,7 +59,7 @@ export type PerfilFijo = {
   nombre: string;
   tipoSolicitud: string;
   negocioCliente: string | null;
-  configuracionCalculoId: string;
+  configuracionesCalculoIds: string[];
   usosCfdiHabilitados: string[] | null;
   comprobantePagoObligatorio: boolean;
 };
@@ -72,7 +76,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
     perfilFijo?.tipoSolicitud ?? ""
   );
   const [configuracionId, setConfiguracionId] = useState<string>(
-    perfilFijo?.configuracionCalculoId ?? CONFIGURACIONES_ACTIVAS[0]?.id ?? ""
+    perfilFijo?.configuracionesCalculoIds[0] ?? CONFIGURACIONES_ACTIVAS[0]?.id ?? ""
   );
   const [modoFiscal, setModoFiscal] = useState<"manual" | "constancia">("manual");
   const [clienteRecurrente, setClienteRecurrente] = useState(false);
@@ -93,6 +97,13 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
     const habilitados = perfilFijo?.usosCfdiHabilitados;
     if (!habilitados) return USOS_CFDI;
     return USOS_CFDI.filter((opcion) => opcion === "Otro" || habilitados.includes(opcion));
+  }, [perfilFijo]);
+
+  const configuracionesDisponibles: ConfiguracionCalculo[] = useMemo(() => {
+    if (!perfilFijo) return CONFIGURACIONES_ACTIVAS;
+    return perfilFijo.configuracionesCalculoIds
+      .map((id) => buscarConfiguracion(id))
+      .filter((c): c is ConfiguracionCalculo => Boolean(c));
   }, [perfilFijo]);
 
   const configuracion = buscarConfiguracion(configuracionId);
@@ -375,7 +386,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
       <fieldset className="space-y-5">
         <legend className={legendClass}>Detalle de la factura</legend>
 
-        {perfilFijo ? (
+        {configuracionesDisponibles.length <= 1 ? (
           <input type="hidden" name="configuracionId" value={configuracionId} />
         ) : (
           <Campo label="Configuración de cálculo" hint={configuracion?.nota}>
@@ -386,7 +397,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
               value={configuracionId}
               onChange={(e) => setConfiguracionId(e.target.value)}
             >
-              {CONFIGURACIONES_ACTIVAS.map((c) => (
+              {configuracionesDisponibles.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
                 </option>

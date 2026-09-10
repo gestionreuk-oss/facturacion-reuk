@@ -71,7 +71,9 @@ export default async function AdminPage() {
               </thead>
               <tbody>
                 {perfiles.map((perfil) => {
-                  const config = buscarConfiguracion(perfil.configuracionCalculoId);
+                  const nombresConfig = perfil.configuracionesCalculoIds
+                    .map((id) => buscarConfiguracion(id)?.nombre ?? id)
+                    .join(", ");
                   const urlPerfil = `${urlBase}/f/${perfil.slug}`;
                   return (
                     <tr key={perfil.id} className="border-b border-sage-light/20 last:border-0">
@@ -102,9 +104,7 @@ export default async function AdminPage() {
                           ? "Cliente final"
                           : "Directo a REUK"}
                       </td>
-                      <td className="px-4 py-3 text-sage-dark/80">
-                        {config?.nombre ?? perfil.configuracionCalculoId}
-                      </td>
+                      <td className="px-4 py-3 text-sage-dark/80">{nombresConfig}</td>
                       <td className="px-4 py-3">
                         <form action={cambiarActivoAction.bind(null, perfil.id, !perfil.activo)}>
                           <button

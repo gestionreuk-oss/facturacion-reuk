@@ -8,7 +8,8 @@ export type PerfilCliente = {
   activo: boolean;
   tipoSolicitud: string;
   negocioCliente: string | null;
-  configuracionCalculoId: string;
+  /** IDs de `CONFIGURACIONES` que este cliente puede elegir en su formulario. */
+  configuracionesCalculoIds: string[];
   /** null = todos los usos de CFDI habilitados (sin restricción). */
   usosCfdiHabilitados: string[] | null;
   /** Solo aplica al flujo "Cliente final de un cliente REUK". */
@@ -24,6 +25,7 @@ type FilaPerfil = {
   tipo_solicitud: string;
   negocio_cliente: string | null;
   configuracion_calculo_id: string;
+  configuraciones_calculo_ids: string[] | null;
   usos_cfdi_habilitados: string[] | null;
   comprobante_pago_obligatorio: boolean;
   creado_en: string;
@@ -37,7 +39,10 @@ function aPerfil(fila: FilaPerfil): PerfilCliente {
     activo: fila.activo,
     tipoSolicitud: fila.tipo_solicitud,
     negocioCliente: fila.negocio_cliente,
-    configuracionCalculoId: fila.configuracion_calculo_id,
+    configuracionesCalculoIds:
+      fila.configuraciones_calculo_ids && fila.configuraciones_calculo_ids.length > 0
+        ? fila.configuraciones_calculo_ids
+        : [fila.configuracion_calculo_id],
     usosCfdiHabilitados: fila.usos_cfdi_habilitados,
     comprobantePagoObligatorio: fila.comprobante_pago_obligatorio,
     creadoEn: fila.creado_en,
@@ -74,7 +79,7 @@ export type DatosPerfil = {
   activo: boolean;
   tipoSolicitud: string;
   negocioCliente: string | null;
-  configuracionCalculoId: string;
+  configuracionesCalculoIds: string[];
   usosCfdiHabilitados: string[] | null;
   comprobantePagoObligatorio: boolean;
 };
@@ -83,11 +88,12 @@ export async function crearPerfil(datos: DatosPerfil): Promise<PerfilCliente> {
   const filas = await sql<FilaPerfil[]>`
     INSERT INTO perfiles
       (slug, nombre, activo, tipo_solicitud, negocio_cliente, configuracion_calculo_id,
-       usos_cfdi_habilitados, comprobante_pago_obligatorio)
+       configuraciones_calculo_ids, usos_cfdi_habilitados, comprobante_pago_obligatorio)
     VALUES
       (${datos.slug}, ${datos.nombre}, ${datos.activo}, ${datos.tipoSolicitud},
-       ${datos.negocioCliente}, ${datos.configuracionCalculoId},
-       ${datos.usosCfdiHabilitados}, ${datos.comprobantePagoObligatorio})
+       ${datos.negocioCliente}, ${datos.configuracionesCalculoIds[0]},
+       ${datos.configuracionesCalculoIds}, ${datos.usosCfdiHabilitados},
+       ${datos.comprobantePagoObligatorio})
     RETURNING *
   `;
   return aPerfil(filas[0]);
@@ -104,7 +110,8 @@ export async function actualizarPerfil(
       activo = ${datos.activo},
       tipo_solicitud = ${datos.tipoSolicitud},
       negocio_cliente = ${datos.negocioCliente},
-      configuracion_calculo_id = ${datos.configuracionCalculoId},
+      configuracion_calculo_id = ${datos.configuracionesCalculoIds[0]},
+      configuraciones_calculo_ids = ${datos.configuracionesCalculoIds},
       usos_cfdi_habilitados = ${datos.usosCfdiHabilitados},
       comprobante_pago_obligatorio = ${datos.comprobantePagoObligatorio}
     WHERE id = ${id}

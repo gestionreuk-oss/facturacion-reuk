@@ -45,6 +45,9 @@ try {
   // NULL = todos los usos de CFDI habilitados (sin restricción).
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS usos_cfdi_habilitados text[]`;
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS comprobante_pago_obligatorio boolean NOT NULL DEFAULT false`;
+  // Lista de configuraciones de cálculo que el cliente puede elegir en su
+  // formulario. NULL/vacío = se usa configuracion_calculo_id como única opción.
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS configuraciones_calculo_ids text[]`;
   console.log("Listo: la tabla \"perfiles\" existe y está al día.");
 } finally {
   await sql.end();

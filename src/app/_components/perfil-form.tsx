@@ -17,7 +17,7 @@ export type ValoresPerfil = {
   slug: string;
   tipoSolicitud: string;
   negocioCliente: string;
-  configuracionCalculoId: string;
+  configuracionesCalculoIds: string[];
   activo: boolean;
   usosCfdiHabilitados: string[] | null;
   comprobantePagoObligatorio: boolean;
@@ -53,6 +53,12 @@ export function PerfilForm({
         valoresIniciales?.usosCfdiHabilitados ?? USOS_CFDI_CATALOGO
       )
   );
+  const [configuracionesHabilitadas, setConfiguracionesHabilitadas] = useState<Set<string>>(
+    () =>
+      new Set(
+        valoresIniciales?.configuracionesCalculoIds ?? [CONFIGURACIONES[0]?.id].filter(Boolean)
+      )
+  );
 
   function alternarUsoCfdi(uso: string) {
     setUsosCfdiHabilitados((actual) => {
@@ -61,6 +67,19 @@ export function PerfilForm({
         siguiente.delete(uso);
       } else {
         siguiente.add(uso);
+      }
+      return siguiente;
+    });
+  }
+
+  function alternarConfiguracion(id: string) {
+    setConfiguracionesHabilitadas((actual) => {
+      const siguiente = new Set(actual);
+      if (siguiente.has(id)) {
+        if (siguiente.size === 1) return actual; // al menos una debe quedar marcada
+        siguiente.delete(id);
+      } else {
+        siguiente.add(id);
       }
       return siguiente;
     });
@@ -161,22 +180,33 @@ export function PerfilForm({
         </label>
       ) : null}
 
-      <label className="block">
-        <span className="text-sm font-medium text-sage-dark">Configuración de cálculo</span>
-        <select
-          name="configuracionCalculoId"
-          required
-          defaultValue={valoresIniciales?.configuracionCalculoId ?? CONFIGURACIONES[0]?.id}
-          className={inputClass}
-        >
+      <div className="block">
+        <span className="text-sm font-medium text-sage-dark">
+          Configuraciones de cálculo que puede elegir este cliente
+        </span>
+        <p className="mt-1 text-xs text-sage-dark/60">
+          Si marcas más de una, el cliente verá un selector en su formulario para elegir con
+          cuál facturar. Debe quedar al menos una marcada.
+        </p>
+        <div className="mt-2 space-y-1.5 rounded-lg border border-sage-light/50 bg-cream/40 p-3">
           {CONFIGURACIONES.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-              {!c.activa ? " (inactiva en el formulario genérico)" : ""}
-            </option>
+            <label key={c.id} className="flex items-start gap-2 text-sm text-sage-dark">
+              <input
+                type="checkbox"
+                name="configuracionesCalculoIds"
+                value={c.id}
+                checked={configuracionesHabilitadas.has(c.id)}
+                onChange={() => alternarConfiguracion(c.id)}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+              />
+              <span>
+                {c.nombre}
+                {!c.activa ? " (inactiva en el formulario genérico)" : ""}
+              </span>
+            </label>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
 
       <div className="block">
         <div className="flex items-center justify-between">

@@ -40,7 +40,7 @@ export default async function EditarPerfilPage({
               slug: perfil.slug,
               tipoSolicitud: perfil.tipoSolicitud,
               negocioCliente: perfil.negocioCliente ?? "",
-              configuracionCalculoId: perfil.configuracionCalculoId,
+              configuracionesCalculoIds: perfil.configuracionesCalculoIds,
               activo: perfil.activo,
               usosCfdiHabilitados: perfil.usosCfdiHabilitados,
               comprobantePagoObligatorio: perfil.comprobantePagoObligatorio,
