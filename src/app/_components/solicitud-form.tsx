@@ -144,12 +144,12 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
             />
           </svg>
         </div>
-        <h2 className="font-serif text-lg font-medium text-forest">Solicitud recibida</h2>
+        <h2 className="font-serif text-lg font-medium text-forest">Solicitud enviada</h2>
         <p className="mt-2 text-sm text-sage-dark/80">
-          {estado.folio
-            ? <>Tu folio de seguimiento es <span className="font-mono tabular-nums text-forest">{estado.folio}</span>.</>
-            : "Ya quedó registrada."}
-          {" "}Te avisaremos por correo cuando esté facturada.
+          {estado.folio ? (
+            <>Tu folio de seguimiento es <span className="font-mono tabular-nums text-forest">{estado.folio}</span>. </>
+          ) : null}
+          Tu factura será emitida en un máximo de 24 horas hábiles.
         </p>
         <button
           type="button"
@@ -160,7 +160,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
           }}
           className="mt-6 rounded-lg border border-sage-light/60 px-4 py-2 text-sm font-medium text-sage-dark transition hover:border-forest/40 hover:text-forest"
         >
-          Enviar otra solicitud
+          Regresar
         </button>
       </div>
     );
