@@ -13,6 +13,8 @@ export type SolicitudFactura = {
   telefono: string;
   concepto: string;
   formaPago: string;
+  metodoPago: string;
+  clienteRecurrente: boolean;
   tipoSolicitud: string;
   negocioCliente: string;
   configuracionNombre: string;
@@ -58,6 +60,8 @@ export async function crearSolicitudEnNotion(data: SolicitudFactura) {
     "Total Neto": { number: data.netoAPagar },
     "Configuración de Cálculo": { rich_text: richText(data.configuracionNombre) },
     "Forma de Pago": { select: { name: data.formaPago } },
+    "Método de Pago": { select: { name: data.metodoPago } },
+    "Cliente Recurrente": { checkbox: data.clienteRecurrente },
     "Tipo de Solicitud": { select: { name: data.tipoSolicitud } },
     Estatus: { select: { name: "Recibida" } },
   };

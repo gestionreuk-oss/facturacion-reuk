@@ -18,7 +18,7 @@ export default function Home() {
             Solicitud de factura
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-sage-dark/80">
-            Llena tus datos fiscales y te la haremos llegar por correo. Usa
+            Llena los datos fiscales y te la haremos llegar por correo. Usa
             este mismo formulario si le compraste a un negocio asesorado por
             nosotros, o si nos solicitas la factura directo a REUK.
           </p>

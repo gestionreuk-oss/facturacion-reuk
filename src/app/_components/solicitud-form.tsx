@@ -5,7 +5,9 @@ import { crearSolicitud, type EstadoSolicitud } from "@/app/solicitud/actions";
 import { calcularNeto } from "@/lib/calculo";
 import { buscarConfiguracion, configuracionesActivas } from "@/lib/configuraciones";
 import {
-  FORMAS_PAGO,
+  FORMA_PAGO_PPD,
+  FORMAS_PAGO_PUE,
+  METODOS_PAGO,
   REGIMENES_FISCALES,
   TIPOS_SOLICITUD,
   USOS_CFDI,
@@ -55,10 +57,8 @@ export type PerfilFijo = {
   negocioCliente: string | null;
   configuracionCalculoId: string;
   usosCfdiHabilitados: string[] | null;
+  comprobantePagoObligatorio: boolean;
 };
-
-const conceptoInputClass =
-  "min-w-0 flex-1 rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/20";
 
 type ConceptoItem = { id: string; concepto: string; monto: string };
 
@@ -75,13 +75,19 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
     perfilFijo?.configuracionCalculoId ?? CONFIGURACIONES_ACTIVAS[0]?.id ?? ""
   );
   const [modoFiscal, setModoFiscal] = useState<"manual" | "constancia">("manual");
+  const [clienteRecurrente, setClienteRecurrente] = useState(false);
   const [conceptos, setConceptos] = useState<ConceptoItem[]>([nuevoConceptoVacio()]);
   const [usoCfdi, setUsoCfdi] = useState("");
+  const [metodoPago, setMetodoPago] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const tipoEfectivo = perfilFijo?.tipoSolicitud ?? tipoSolicitud;
   const esDirectoReuk = tipoEfectivo === "Cliente directo de REUK";
   const esClienteFinal = tipoEfectivo === "Cliente final de un cliente REUK";
+  const esRecurrente = esDirectoReuk && clienteRecurrente;
+  const modoFiscalEfectivo = esRecurrente ? "recurrente" : modoFiscal;
+  const esPPD = metodoPago === "PPD - Pago en parcialidades o diferido";
+  const comprobanteRequerido = perfilFijo?.comprobantePagoObligatorio ?? false;
 
   const usosCfdiVisibles = useMemo(() => {
     const habilitados = perfilFijo?.usosCfdiHabilitados;
@@ -234,87 +240,105 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
           />
         </Campo>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setModoFiscal("manual")}
-            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
-              modoFiscal === "manual"
-                ? "bg-forest text-cream"
-                : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
-            }`}
-          >
-            {esDirectoReuk ? "Escribir sus datos" : "Escribir mis datos"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setModoFiscal("constancia")}
-            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
-              modoFiscal === "constancia"
-                ? "bg-forest text-cream"
-                : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
-            }`}
-          >
-            {esDirectoReuk ? "Subir su constancia fiscal" : "Subir mi constancia fiscal"}
-          </button>
-        </div>
-        <input type="hidden" name="modoFiscal" value={modoFiscal} />
-
-        {modoFiscal === "manual" ? (
-          <>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Campo label="RFC">
-                <input
-                  type="text"
-                  name="rfc"
-                  required
-                  maxLength={13}
-                  className={`${inputClass} uppercase`}
-                  placeholder="XAXX010101000"
-                />
-              </Campo>
-              <Campo label="Código postal fiscal">
-                <input
-                  type="text"
-                  name="codigoPostal"
-                  required
-                  inputMode="numeric"
-                  maxLength={5}
-                  className={inputClass}
-                  placeholder="00000"
-                />
-              </Campo>
-            </div>
-            <Campo label="Régimen fiscal">
-              <select name="regimenFiscal" required defaultValue="" className={inputClass}>
-                <option value="" disabled>
-                  Selecciona tu régimen
-                </option>
-                {REGIMENES_FISCALES.map((opcion) => (
-                  <option key={opcion} value={opcion}>
-                    {opcion}
-                  </option>
-                ))}
-              </select>
-            </Campo>
-          </>
-        ) : (
-          <Campo
-            label={esDirectoReuk ? "Constancia de situación fiscal del cliente" : "Constancia de situación fiscal"}
-            hint={
-              esDirectoReuk
-                ? "PDF o foto legible. Tomamos su RFC, régimen y código postal de ahí."
-                : "PDF o foto legible. Tomamos tu RFC, régimen y código postal de ahí."
-            }
-          >
+        {esDirectoReuk ? (
+          <label className="flex items-center gap-2 text-sm text-sage-dark">
             <input
-              type="file"
-              name="constanciaFiscal"
-              required
-              accept="application/pdf,image/*"
-              className={archivoClass}
+              type="checkbox"
+              checked={clienteRecurrente}
+              onChange={(e) => setClienteRecurrente(e.target.checked)}
+              className="h-4 w-4 rounded border-sage-light/60 text-forest focus:ring-forest/30"
             />
-          </Campo>
+            Cliente recurrente al que ya se le ha facturado
+          </label>
+        ) : null}
+
+        {esRecurrente ? (
+          <input type="hidden" name="modoFiscal" value="recurrente" />
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setModoFiscal("manual")}
+                className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+                  modoFiscal === "manual"
+                    ? "bg-forest text-cream"
+                    : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
+                }`}
+              >
+                Escribir datos
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoFiscal("constancia")}
+                className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+                  modoFiscal === "constancia"
+                    ? "bg-forest text-cream"
+                    : "border border-sage-light/50 text-sage-dark hover:border-forest/40"
+                }`}
+              >
+                Subir constancia fiscal
+              </button>
+            </div>
+            <input type="hidden" name="modoFiscal" value={modoFiscalEfectivo} />
+
+            {modoFiscal === "manual" ? (
+              <>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <Campo label="RFC">
+                    <input
+                      type="text"
+                      name="rfc"
+                      required
+                      maxLength={13}
+                      className={`${inputClass} uppercase`}
+                      placeholder="XAXX010101000"
+                    />
+                  </Campo>
+                  <Campo label="Código postal fiscal">
+                    <input
+                      type="text"
+                      name="codigoPostal"
+                      required
+                      inputMode="numeric"
+                      maxLength={5}
+                      className={inputClass}
+                      placeholder="00000"
+                    />
+                  </Campo>
+                </div>
+                <Campo label="Régimen fiscal">
+                  <select name="regimenFiscal" required defaultValue="" className={inputClass}>
+                    <option value="" disabled>
+                      Selecciona régimen fiscal
+                    </option>
+                    {REGIMENES_FISCALES.map((opcion) => (
+                      <option key={opcion} value={opcion}>
+                        {opcion}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              </>
+            ) : (
+              <Campo
+                label={esDirectoReuk ? "Constancia de situación fiscal del cliente" : "Constancia de situación fiscal"}
+                hint={
+                  esDirectoReuk
+                    ? "PDF o foto legible. Tomamos su RFC, régimen y código postal de ahí."
+                    : "PDF o foto legible. Tomamos tu RFC, régimen y código postal de ahí."
+                }
+              >
+                <input
+                  type="file"
+                  name="constanciaFiscal"
+                  required
+                  accept="application/pdf,image/*"
+                  className={archivoClass}
+                />
+              </Campo>
+            )}
+          </>
         )}
 
         <Campo label="Uso de CFDI">
@@ -376,33 +400,35 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
             {tieneDesglose ? "Conceptos (montos antes de IVA)" : "Conceptos"}
           </span>
           {conceptos.map((item) => (
-            <div key={item.id} className="flex gap-2">
+            <div key={item.id} className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
                 value={item.concepto}
                 onChange={(e) => actualizarConcepto(item.id, "concepto", e.target.value)}
                 placeholder="Qué se está facturando"
-                className={conceptoInputClass}
+                className="w-full rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/20 sm:min-w-0 sm:flex-1"
               />
-              <input
-                type="number"
-                value={item.monto}
-                onChange={(e) => actualizarConcepto(item.id, "monto", e.target.value)}
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                placeholder="0.00"
-                className="w-36 shrink-0 rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition tabular-nums focus:border-forest focus:ring-2 focus:ring-forest/20"
-              />
-              <button
-                type="button"
-                onClick={() => quitarConcepto(item.id)}
-                disabled={conceptos.length === 1}
-                aria-label="Quitar este concepto"
-                className="shrink-0 rounded-lg border border-sage-light/50 px-3 text-sage-dark transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                ×
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={item.monto}
+                  onChange={(e) => actualizarConcepto(item.id, "monto", e.target.value)}
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className="min-w-0 flex-1 rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark placeholder:text-sage-light shadow-sm outline-none transition tabular-nums focus:border-forest focus:ring-2 focus:ring-forest/20 sm:w-36 sm:flex-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => quitarConcepto(item.id)}
+                  disabled={conceptos.length === 1}
+                  aria-label="Quitar este concepto"
+                  className="shrink-0 rounded-lg border border-sage-light/50 px-3 text-sage-dark transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           ))}
           <button
@@ -416,18 +442,48 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
         <input type="hidden" name="concepto" value={conceptoCombinado} />
         <input type="hidden" name="monto" value={subtotal || ""} />
 
-        <Campo label="Forma de pago">
-          <select name="formaPago" required defaultValue="" className={inputClass}>
+        <Campo label="Método de pago">
+          <select
+            name="metodoPago"
+            required
+            value={metodoPago}
+            onChange={(e) => setMetodoPago(e.target.value)}
+            className={inputClass}
+          >
             <option value="" disabled>
               Selecciona una opción
             </option>
-            {FORMAS_PAGO.map((opcion) => (
+            {METODOS_PAGO.map((opcion) => (
               <option key={opcion} value={opcion}>
                 {opcion}
               </option>
             ))}
           </select>
         </Campo>
+
+        {metodoPago ? (
+          <Campo label="Forma de pago">
+            {esPPD ? (
+              <>
+                <div className={`${inputClass} bg-sage-light/10 text-sage-dark/80`}>
+                  {FORMA_PAGO_PPD}
+                </div>
+                <input type="hidden" name="formaPago" value={FORMA_PAGO_PPD} />
+              </>
+            ) : (
+              <select name="formaPago" required defaultValue="" className={inputClass}>
+                <option value="" disabled>
+                  Selecciona una opción
+                </option>
+                {FORMAS_PAGO_PUE.map((opcion) => (
+                  <option key={opcion} value={opcion}>
+                    {opcion}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Campo>
+        ) : null}
 
         {tieneDesglose && desglose && subtotal > 0 ? (
           <div className="rounded-lg border border-sage-light/40 bg-cream/60 px-4 py-3.5 text-sm">
@@ -466,10 +522,15 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
       {esClienteFinal ? (
         <fieldset className="space-y-5">
           <legend className={legendClass}>Comprobante de pago</legend>
-          <Campo label="Sube tu comprobante (opcional)" hint="Foto o captura de la transferencia/pago.">
+          <input type="hidden" name="comprobanteRequerido" value={comprobanteRequerido ? "true" : "false"} />
+          <Campo
+            label={comprobanteRequerido ? "Sube tu comprobante de pago" : "Sube tu comprobante (opcional)"}
+            hint="Foto o captura de la transferencia/pago."
+          >
             <input
               type="file"
               name="comprobantePago"
+              required={comprobanteRequerido}
               accept="image/*,application/pdf"
               className={archivoClass}
             />

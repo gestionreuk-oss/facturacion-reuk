@@ -5,7 +5,9 @@ import { buscarConfiguracion } from "@/lib/configuraciones";
 import { esArchivoValido, subirArchivo } from "@/lib/blob";
 import { crearSolicitudEnNotion } from "@/lib/notion";
 import {
+  FORMA_PAGO_PPD,
   FORMAS_PAGO,
+  METODOS_PAGO,
   REGIMENES_FISCALES,
   TIPOS_SOLICITUD,
   USOS_CFDI,
@@ -39,13 +41,16 @@ export async function crearSolicitud(
   const concepto = requerido(formData, "concepto");
   const montoRaw = requerido(formData, "monto");
   const formaPago = requerido(formData, "formaPago");
+  const metodoPago = requerido(formData, "metodoPago");
   const tipoSolicitud = requerido(formData, "tipoSolicitud");
   const negocioCliente = requerido(formData, "negocioCliente");
   const configuracionId = requerido(formData, "configuracionId");
   const constanciaFiscal = formData.get("constanciaFiscal");
   const comprobantePago = formData.get("comprobantePago");
+  const comprobanteRequerido = requerido(formData, "comprobanteRequerido") === "true";
 
   const esClienteFinal = tipoSolicitud === "Cliente final de un cliente REUK";
+  const esRecurrente = modoFiscal === "recurrente";
 
   if (!razonSocial || !usoCfdi) {
     return { status: "error", message: "Faltan datos fiscales obligatorios." };
@@ -63,7 +68,20 @@ export async function crearSolicitud(
   if (usoCfdi === "Otro" && !usoCfdiOtro) {
     return { status: "error", message: "Especifica el uso de CFDI." };
   }
+  if (!METODOS_PAGO.includes(metodoPago as (typeof METODOS_PAGO)[number])) {
+    return { status: "error", message: "Selecciona el método de pago." };
+  }
+  const esPPD = metodoPago === "PPD - Pago en parcialidades o diferido";
   if (!FORMAS_PAGO.includes(formaPago as (typeof FORMAS_PAGO)[number])) {
+    return { status: "error", message: "Selecciona una forma de pago válida." };
+  }
+  if (esPPD && formaPago !== FORMA_PAGO_PPD) {
+    return {
+      status: "error",
+      message: `Cuando el método de pago es PPD, la forma de pago debe ser "${FORMA_PAGO_PPD}".`,
+    };
+  }
+  if (!esPPD && formaPago === FORMA_PAGO_PPD) {
     return { status: "error", message: "Selecciona una forma de pago válida." };
   }
   if (!TIPOS_SOLICITUD.includes(tipoSolicitud as (typeof TIPOS_SOLICITUD)[number])) {
@@ -86,7 +104,10 @@ export async function crearSolicitud(
     return { status: "error", message: "Escribe un correo válido." };
   }
 
-  if (modoFiscal === "constancia") {
+  if (esRecurrente) {
+    // Cliente directo de REUK que ya tiene sus datos fiscales en archivo —
+    // no se le vuelve a pedir RFC, régimen, código postal ni constancia.
+  } else if (modoFiscal === "constancia") {
     if (!esArchivoValido(constanciaFiscal)) {
       return {
         status: "error",
@@ -109,6 +130,10 @@ export async function crearSolicitud(
     if (!REGIMENES_FISCALES.includes(regimenFiscal as (typeof REGIMENES_FISCALES)[number])) {
       return { status: "error", message: "Selecciona un régimen fiscal válido." };
     }
+  }
+
+  if (esClienteFinal && comprobanteRequerido && !esArchivoValido(comprobantePago)) {
+    return { status: "error", message: "Sube tu comprobante de pago." };
   }
 
   const configuracion = buscarConfiguracion(configuracionId);
@@ -143,6 +168,8 @@ export async function crearSolicitud(
       telefono,
       concepto,
       formaPago,
+      metodoPago,
+      clienteRecurrente: esRecurrente,
       tipoSolicitud,
       negocioCliente,
       configuracionNombre: configuracion.nombre,

@@ -11,6 +11,8 @@ export type PerfilCliente = {
   configuracionCalculoId: string;
   /** null = todos los usos de CFDI habilitados (sin restricción). */
   usosCfdiHabilitados: string[] | null;
+  /** Solo aplica al flujo "Cliente final de un cliente REUK". */
+  comprobantePagoObligatorio: boolean;
   creadoEn: string;
 };
 
@@ -23,6 +25,7 @@ type FilaPerfil = {
   negocio_cliente: string | null;
   configuracion_calculo_id: string;
   usos_cfdi_habilitados: string[] | null;
+  comprobante_pago_obligatorio: boolean;
   creado_en: string;
 };
 
@@ -36,6 +39,7 @@ function aPerfil(fila: FilaPerfil): PerfilCliente {
     negocioCliente: fila.negocio_cliente,
     configuracionCalculoId: fila.configuracion_calculo_id,
     usosCfdiHabilitados: fila.usos_cfdi_habilitados,
+    comprobantePagoObligatorio: fila.comprobante_pago_obligatorio,
     creadoEn: fila.creado_en,
   };
 }
@@ -72,17 +76,18 @@ export type DatosPerfil = {
   negocioCliente: string | null;
   configuracionCalculoId: string;
   usosCfdiHabilitados: string[] | null;
+  comprobantePagoObligatorio: boolean;
 };
 
 export async function crearPerfil(datos: DatosPerfil): Promise<PerfilCliente> {
   const filas = await sql<FilaPerfil[]>`
     INSERT INTO perfiles
       (slug, nombre, activo, tipo_solicitud, negocio_cliente, configuracion_calculo_id,
-       usos_cfdi_habilitados)
+       usos_cfdi_habilitados, comprobante_pago_obligatorio)
     VALUES
       (${datos.slug}, ${datos.nombre}, ${datos.activo}, ${datos.tipoSolicitud},
        ${datos.negocioCliente}, ${datos.configuracionCalculoId},
-       ${datos.usosCfdiHabilitados})
+       ${datos.usosCfdiHabilitados}, ${datos.comprobantePagoObligatorio})
     RETURNING *
   `;
   return aPerfil(filas[0]);
@@ -100,7 +105,8 @@ export async function actualizarPerfil(
       tipo_solicitud = ${datos.tipoSolicitud},
       negocio_cliente = ${datos.negocioCliente},
       configuracion_calculo_id = ${datos.configuracionCalculoId},
-      usos_cfdi_habilitados = ${datos.usosCfdiHabilitados}
+      usos_cfdi_habilitados = ${datos.usosCfdiHabilitados},
+      comprobante_pago_obligatorio = ${datos.comprobantePagoObligatorio}
     WHERE id = ${id}
     RETURNING *
   `;

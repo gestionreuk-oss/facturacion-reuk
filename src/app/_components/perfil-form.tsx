@@ -20,6 +20,7 @@ export type ValoresPerfil = {
   configuracionCalculoId: string;
   activo: boolean;
   usosCfdiHabilitados: string[] | null;
+  comprobantePagoObligatorio: boolean;
 };
 
 function normalizarSlugVista(valor: string): string {
@@ -143,6 +144,20 @@ export function PerfilForm({
             placeholder="Como lo reconocerá quien solicita"
             className={inputClass}
           />
+        </label>
+      ) : null}
+
+      {tipoSolicitud === "Cliente final de un cliente REUK" ? (
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="comprobantePagoObligatorio"
+            defaultChecked={valoresIniciales?.comprobantePagoObligatorio ?? false}
+            className="h-4 w-4 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+          />
+          <span className="text-sm text-sage-dark">
+            Comprobante de pago obligatorio para enviar la solicitud
+          </span>
         </label>
       ) : null}
 

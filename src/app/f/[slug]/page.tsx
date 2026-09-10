@@ -31,7 +31,7 @@ export default async function SolicitudPorPerfilPage({
             Solicitud de factura — {perfil.nombre}
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-sage-dark/80">
-            Llena tus datos fiscales y te la haremos llegar por correo.
+            Llena los datos fiscales y te la haremos llegar por correo.
           </p>
         </header>
 
@@ -43,6 +43,7 @@ export default async function SolicitudPorPerfilPage({
               negocioCliente: perfil.negocioCliente,
               configuracionCalculoId: perfil.configuracionCalculoId,
               usosCfdiHabilitados: perfil.usosCfdiHabilitados,
+              comprobantePagoObligatorio: perfil.comprobantePagoObligatorio,
             }}
           />
         </div>

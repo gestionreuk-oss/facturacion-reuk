@@ -54,7 +54,19 @@ export const FORMAS_PAGO = [
   "03 - Transferencia electrónica",
   "04 - Tarjeta de crédito",
   "28 - Tarjeta de débito",
+  "99 - Por definir",
   "Otro",
+] as const;
+
+/** Forma de pago que se puede elegir cuando el método de pago es PUE. */
+export const FORMAS_PAGO_PUE = FORMAS_PAGO.filter((f) => f !== "99 - Por definir");
+
+/** Única forma de pago válida cuando el método de pago es PPD. */
+export const FORMA_PAGO_PPD = "99 - Por definir";
+
+export const METODOS_PAGO = [
+  "PUE - Pago en una sola exhibición",
+  "PPD - Pago en parcialidades o diferido",
 ] as const;
 
 export const TIPOS_SOLICITUD = [

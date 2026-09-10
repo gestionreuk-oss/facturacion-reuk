@@ -69,6 +69,8 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
   const usosCfdiHabilitados =
     usosCfdiSeleccionados.length === usosCfdiCatalogo.length ? null : usosCfdiSeleccionados;
 
+  const comprobantePagoObligatorio = formData.get("comprobantePagoObligatorio") === "on";
+
   return {
     slug,
     nombre,
@@ -77,6 +79,7 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
     negocioCliente: negocioCliente || null,
     configuracionCalculoId,
     usosCfdiHabilitados,
+    comprobantePagoObligatorio,
   };
 }
 
