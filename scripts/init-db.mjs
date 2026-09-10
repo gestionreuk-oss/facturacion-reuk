@@ -10,7 +10,7 @@ function cargarEnvLocal() {
     for (const linea of contenido.split("\n")) {
       const match = linea.match(/^([A-Z_]+)=(.*)$/);
       if (match && !process.env[match[1]]) {
-        process.env[match[1]] = match[2].trim();
+        process.env[match[1]] = match[2].trim().replace(/^"(.*)"$/, "$1");
       }
     }
   } catch {
