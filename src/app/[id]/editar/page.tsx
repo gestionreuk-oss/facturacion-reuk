@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { obtenerPerfilPorId } from "@/lib/perfiles";
 import { haySesionAdmin } from "@/lib/session";
+import { obtenerUrlBase } from "@/lib/url";
 import { actualizarPerfilAction } from "../../actions";
 import { PerfilForm } from "../../_components/perfil-form";
+import { QrDescarga } from "../../_components/qr-descarga";
 
 export default async function EditarPerfilPage({
   params,
@@ -15,12 +17,13 @@ export default async function EditarPerfilPage({
   }
 
   const { id } = await params;
-  const perfil = await obtenerPerfilPorId(id);
+  const [perfil, urlBase] = await Promise.all([obtenerPerfilPorId(id), obtenerUrlBase()]);
   if (!perfil) {
     notFound();
   }
 
   const accion = actualizarPerfilAction.bind(null, id);
+  const urlPerfil = `${urlBase}/f/${perfil.slug}`;
 
   return (
     <main className="min-h-screen bg-cream px-4 py-10 sm:px-8">
@@ -44,8 +47,15 @@ export default async function EditarPerfilPage({
               activo: perfil.activo,
               usosCfdiHabilitados: perfil.usosCfdiHabilitados,
               comprobantePagoObligatorio: perfil.comprobantePagoObligatorio,
+              logoUrl: perfil.logoUrl,
+              correoObligatorio: perfil.correoObligatorio,
+              telefonoObligatorio: perfil.telefonoObligatorio,
             }}
           />
+        </div>
+
+        <div className="mt-6">
+          <QrDescarga url={urlPerfil} logoUrl={perfil.logoUrl} nombre={perfil.nombre} />
         </div>
       </div>
     </main>

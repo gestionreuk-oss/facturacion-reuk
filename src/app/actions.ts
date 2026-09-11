@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { esArchivoValido, subirArchivo } from "@/lib/blob";
 import { CONFIGURACIONES } from "@/lib/configuraciones";
 import { TIPOS_SOLICITUD, USOS_CFDI } from "@/lib/opciones";
 import {
@@ -10,6 +11,7 @@ import {
   crearPerfil,
   eliminarPerfil,
   esErrorSlugDuplicado,
+  obtenerPerfilPorId,
   type DatosPerfil,
 } from "@/lib/perfiles";
 import { cerrarSesionAdmin, haySesionAdmin } from "@/lib/session";
@@ -34,7 +36,9 @@ function normalizarSlug(valor: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
+type DatosPerfilSinLogo = Omit<DatosPerfil, "logoUrl">;
+
+function leerDatosPerfil(formData: FormData): DatosPerfilSinLogo | { error: string } {
   const nombre = String(formData.get("nombre") ?? "").trim();
   const slugCrudo = String(formData.get("slug") ?? "");
   const tipoSolicitud = String(formData.get("tipoSolicitud") ?? "");
@@ -73,6 +77,8 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
     usosCfdiSeleccionados.length === usosCfdiCatalogo.length ? null : usosCfdiSeleccionados;
 
   const comprobantePagoObligatorio = formData.get("comprobantePagoObligatorio") === "on";
+  const correoObligatorio = formData.get("correoObligatorio") === "on";
+  const telefonoObligatorio = formData.get("telefonoObligatorio") === "on";
 
   return {
     slug,
@@ -83,7 +89,27 @@ function leerDatosPerfil(formData: FormData): DatosPerfil | { error: string } {
     configuracionesCalculoIds,
     usosCfdiHabilitados,
     comprobantePagoObligatorio,
+    correoObligatorio,
+    telefonoObligatorio,
   };
+}
+
+/**
+ * Sube el logo nuevo si lo hay; si marcaron "quitar logo" y no hay uno
+ * nuevo, lo borra; si no pasó nada de eso, conserva el que ya tenía.
+ */
+async function resolverLogoUrl(
+  formData: FormData,
+  logoActual: string | null
+): Promise<string | null> {
+  const logo = formData.get("logo");
+  if (esArchivoValido(logo)) {
+    return await subirArchivo(logo, "logos-clientes");
+  }
+  if (formData.get("quitarLogo") === "on") {
+    return null;
+  }
+  return logoActual;
 }
 
 export async function crearPerfilAction(
@@ -92,8 +118,18 @@ export async function crearPerfilAction(
 ): Promise<EstadoPerfil> {
   await exigirSesion();
 
-  const datos = leerDatosPerfil(formData);
-  if ("error" in datos) return { status: "error", message: datos.error };
+  const datosSinLogo = leerDatosPerfil(formData);
+  if ("error" in datosSinLogo) return { status: "error", message: datosSinLogo.error };
+
+  let logoUrl: string | null = null;
+  try {
+    logoUrl = await resolverLogoUrl(formData, null);
+  } catch (error) {
+    console.error("Error subiendo el logo:", error);
+    return { status: "error", message: "No se pudo subir el logo. Intenta de nuevo." };
+  }
+
+  const datos: DatosPerfil = { ...datosSinLogo, logoUrl };
 
   try {
     await crearPerfil(datos);
@@ -116,8 +152,19 @@ export async function actualizarPerfilAction(
 ): Promise<EstadoPerfil> {
   await exigirSesion();
 
-  const datos = leerDatosPerfil(formData);
-  if ("error" in datos) return { status: "error", message: datos.error };
+  const datosSinLogo = leerDatosPerfil(formData);
+  if ("error" in datosSinLogo) return { status: "error", message: datosSinLogo.error };
+
+  const perfilActual = await obtenerPerfilPorId(id);
+  let logoUrl: string | null = null;
+  try {
+    logoUrl = await resolverLogoUrl(formData, perfilActual?.logoUrl ?? null);
+  } catch (error) {
+    console.error("Error subiendo el logo:", error);
+    return { status: "error", message: "No se pudo subir el logo. Intenta de nuevo." };
+  }
+
+  const datos: DatosPerfil = { ...datosSinLogo, logoUrl };
 
   try {
     await actualizarPerfil(id, datos);

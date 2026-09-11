@@ -1,19 +1,13 @@
-import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buscarConfiguracion } from "@/lib/configuraciones";
 import { listarPerfiles } from "@/lib/perfiles";
 import { haySesionAdmin } from "@/lib/session";
+import { obtenerUrlBase } from "@/lib/url";
 import { cambiarActivoAction, cerrarSesionAction, eliminarPerfilAction } from "./actions";
 import { CopyLinkButton } from "./_components/copy-link-button";
 import { EliminarPerfilBoton } from "./_components/eliminar-perfil-boton";
-
-async function obtenerUrlBase(): Promise<string> {
-  const encabezados = await headers();
-  const host = encabezados.get("host") ?? "facturacion-reuk.vercel.app";
-  const proto = encabezados.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
-}
+import { LogoQrButton } from "./_components/logo-qr-button";
 
 export default async function AdminPage() {
   if (!(await haySesionAdmin())) {
@@ -78,12 +72,23 @@ export default async function AdminPage() {
                   return (
                     <tr key={perfil.id} className="border-b border-sage-light/20 last:border-0">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-sage-dark">{perfil.nombre}</div>
-                        {perfil.negocioCliente ? (
-                          <div className="text-xs text-sage-light">
-                            Negocio: {perfil.negocioCliente}
+                        <div className="flex items-center gap-2.5">
+                          {perfil.logoUrl ? (
+                            <LogoQrButton
+                              logoUrl={perfil.logoUrl}
+                              url={urlPerfil}
+                              nombre={perfil.nombre}
+                            />
+                          ) : null}
+                          <div>
+                            <div className="font-medium text-sage-dark">{perfil.nombre}</div>
+                            {perfil.negocioCliente ? (
+                              <div className="text-xs text-sage-light">
+                                Negocio: {perfil.negocioCliente}
+                              </div>
+                            ) : null}
                           </div>
-                        ) : null}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

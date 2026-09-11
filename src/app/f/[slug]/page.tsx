@@ -44,6 +44,8 @@ export default async function SolicitudPorPerfilPage({
               configuracionesCalculoIds: perfil.configuracionesCalculoIds,
               usosCfdiHabilitados: perfil.usosCfdiHabilitados,
               comprobantePagoObligatorio: perfil.comprobantePagoObligatorio,
+              correoObligatorio: perfil.correoObligatorio,
+              telefonoObligatorio: perfil.telefonoObligatorio,
             }}
           />
         </div>

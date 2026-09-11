@@ -49,6 +49,8 @@ export async function crearSolicitud(
   const constanciaFiscal = formData.get("constanciaFiscal");
   const comprobantePago = formData.get("comprobantePago");
   const comprobanteRequerido = requerido(formData, "comprobanteRequerido") === "true";
+  const correoObligatorio = requerido(formData, "correoObligatorio") === "true";
+  const telefonoObligatorio = requerido(formData, "telefonoObligatorio") === "true";
 
   const esClienteFinal = tipoSolicitud === "Cliente final de un cliente REUK";
   const esRecurrente = modoFiscal === "recurrente";
@@ -94,15 +96,17 @@ export async function crearSolicitud(
       message: "Escribe el nombre del negocio al que le compraste.",
     };
   }
-  // El correo es obligatorio salvo cuando REUK factura directo a su propio
-  // cliente — ahí es un dato opcional. Si lo escriben, de todas formas debe
-  // tener forma de correo.
-  if (tipoSolicitud === "Cliente directo de REUK") {
-    if (correo && !correo.includes("@")) {
+  // Obligatoriedad de correo/teléfono viene del perfil de cliente (o de los
+  // valores por defecto del formulario genérico) — ver src/lib/perfiles.ts.
+  if (correoObligatorio) {
+    if (!correo || !correo.includes("@")) {
       return { status: "error", message: "Escribe un correo válido." };
     }
-  } else if (!correo || !correo.includes("@")) {
+  } else if (correo && !correo.includes("@")) {
     return { status: "error", message: "Escribe un correo válido." };
+  }
+  if (telefonoObligatorio && !telefono) {
+    return { status: "error", message: "Escribe tu teléfono." };
   }
 
   if (esRecurrente) {

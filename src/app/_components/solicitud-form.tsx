@@ -62,6 +62,8 @@ export type PerfilFijo = {
   configuracionesCalculoIds: string[];
   usosCfdiHabilitados: string[] | null;
   comprobantePagoObligatorio: boolean;
+  correoObligatorio: boolean;
+  telefonoObligatorio: boolean;
 };
 
 type ConceptoItem = { id: string; concepto: string; monto: string };
@@ -92,6 +94,9 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
   const modoFiscalEfectivo = esRecurrente ? "recurrente" : modoFiscal;
   const esPPD = metodoPago === "PPD - Pago en parcialidades o diferido";
   const comprobanteRequerido = perfilFijo?.comprobantePagoObligatorio ?? false;
+  const correoObligatorio = perfilFijo?.correoObligatorio ?? !esDirectoReuk;
+  const mostrarTelefono = perfilFijo ? true : !esDirectoReuk;
+  const telefonoObligatorio = perfilFijo?.telefonoObligatorio ?? false;
 
   const usosCfdiVisibles = useMemo(() => {
     const habilitados = perfilFijo?.usosCfdiHabilitados;
@@ -552,24 +557,43 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
 
       <fieldset className="space-y-5">
         <legend className={legendClass}>Datos de contacto</legend>
+        <input
+          type="hidden"
+          name="correoObligatorio"
+          value={correoObligatorio ? "true" : "false"}
+        />
+        <input
+          type="hidden"
+          name="telefonoObligatorio"
+          value={telefonoObligatorio ? "true" : "false"}
+        />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Campo
-            label={esDirectoReuk ? "Correo del cliente" : "Correo"}
+            label={
+              (esDirectoReuk ? "Correo del cliente" : "Correo") +
+              (correoObligatorio ? "" : " (opcional)")
+            }
             hint="Aquí te avisamos cuando esté lista tu factura."
           >
             <input
               type="email"
               name="correo"
-              required={!esDirectoReuk}
+              required={correoObligatorio}
               className={inputClass}
               placeholder="tu@correo.com"
             />
           </Campo>
-          {esDirectoReuk ? null : (
-            <Campo label="Teléfono (opcional)">
-              <input type="tel" name="telefono" className={inputClass} placeholder="10 dígitos" />
+          {mostrarTelefono ? (
+            <Campo label={telefonoObligatorio ? "Teléfono" : "Teléfono (opcional)"}>
+              <input
+                type="tel"
+                name="telefono"
+                required={telefonoObligatorio}
+                className={inputClass}
+                placeholder="10 dígitos"
+              />
             </Campo>
-          )}
+          ) : null}
         </div>
       </fieldset>
 

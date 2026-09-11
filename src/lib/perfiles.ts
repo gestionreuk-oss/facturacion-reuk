@@ -14,6 +14,10 @@ export type PerfilCliente = {
   usosCfdiHabilitados: string[] | null;
   /** Solo aplica al flujo "Cliente final de un cliente REUK". */
   comprobantePagoObligatorio: boolean;
+  /** URL pública en Vercel Blob del logo del cliente, o null si no tiene. */
+  logoUrl: string | null;
+  correoObligatorio: boolean;
+  telefonoObligatorio: boolean;
   creadoEn: string;
 };
 
@@ -28,6 +32,9 @@ type FilaPerfil = {
   configuraciones_calculo_ids: string[] | null;
   usos_cfdi_habilitados: string[] | null;
   comprobante_pago_obligatorio: boolean;
+  logo_url: string | null;
+  correo_obligatorio: boolean | null;
+  telefono_obligatorio: boolean | null;
   creado_en: string;
 };
 
@@ -45,6 +52,13 @@ function aPerfil(fila: FilaPerfil): PerfilCliente {
         : [fila.configuracion_calculo_id],
     usosCfdiHabilitados: fila.usos_cfdi_habilitados,
     comprobantePagoObligatorio: fila.comprobante_pago_obligatorio,
+    logoUrl: fila.logo_url,
+    // NULL (perfil creado antes de que esto fuera configurable) conserva el
+    // comportamiento de siempre: correo obligatorio solo para cliente final,
+    // teléfono siempre opcional.
+    correoObligatorio:
+      fila.correo_obligatorio ?? fila.tipo_solicitud === "Cliente final de un cliente REUK",
+    telefonoObligatorio: fila.telefono_obligatorio ?? false,
     creadoEn: fila.creado_en,
   };
 }
@@ -82,18 +96,23 @@ export type DatosPerfil = {
   configuracionesCalculoIds: string[];
   usosCfdiHabilitados: string[] | null;
   comprobantePagoObligatorio: boolean;
+  logoUrl: string | null;
+  correoObligatorio: boolean;
+  telefonoObligatorio: boolean;
 };
 
 export async function crearPerfil(datos: DatosPerfil): Promise<PerfilCliente> {
   const filas = await sql<FilaPerfil[]>`
     INSERT INTO perfiles
       (slug, nombre, activo, tipo_solicitud, negocio_cliente, configuracion_calculo_id,
-       configuraciones_calculo_ids, usos_cfdi_habilitados, comprobante_pago_obligatorio)
+       configuraciones_calculo_ids, usos_cfdi_habilitados, comprobante_pago_obligatorio,
+       logo_url, correo_obligatorio, telefono_obligatorio)
     VALUES
       (${datos.slug}, ${datos.nombre}, ${datos.activo}, ${datos.tipoSolicitud},
        ${datos.negocioCliente}, ${datos.configuracionesCalculoIds[0]},
        ${datos.configuracionesCalculoIds}, ${datos.usosCfdiHabilitados},
-       ${datos.comprobantePagoObligatorio})
+       ${datos.comprobantePagoObligatorio}, ${datos.logoUrl},
+       ${datos.correoObligatorio}, ${datos.telefonoObligatorio})
     RETURNING *
   `;
   return aPerfil(filas[0]);
@@ -113,7 +132,10 @@ export async function actualizarPerfil(
       configuracion_calculo_id = ${datos.configuracionesCalculoIds[0]},
       configuraciones_calculo_ids = ${datos.configuracionesCalculoIds},
       usos_cfdi_habilitados = ${datos.usosCfdiHabilitados},
-      comprobante_pago_obligatorio = ${datos.comprobantePagoObligatorio}
+      comprobante_pago_obligatorio = ${datos.comprobantePagoObligatorio},
+      logo_url = ${datos.logoUrl},
+      correo_obligatorio = ${datos.correoObligatorio},
+      telefono_obligatorio = ${datos.telefonoObligatorio}
     WHERE id = ${id}
     RETURNING *
   `;

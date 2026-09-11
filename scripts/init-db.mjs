@@ -48,6 +48,12 @@ try {
   // Lista de configuraciones de cálculo que el cliente puede elegir en su
   // formulario. NULL/vacío = se usa configuracion_calculo_id como única opción.
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS configuraciones_calculo_ids text[]`;
+  // Logo del cliente (Vercel Blob) — se usa al centro de su código QR y junto
+  // a su nombre en el panel. NULL = sin logo.
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS logo_url text`;
+  // NULL = usa el valor por defecto según tipo_solicitud (ver src/lib/perfiles.ts).
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS correo_obligatorio boolean`;
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS telefono_obligatorio boolean`;
   console.log("Listo: la tabla \"perfiles\" existe y está al día.");
 } finally {
   await sql.end();

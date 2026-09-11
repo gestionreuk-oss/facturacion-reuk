@@ -10,6 +10,9 @@ const ESTADO_INICIAL: EstadoPerfil = { status: "idle" };
 const inputClass =
   "mt-1.5 block w-full rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sage-dark shadow-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/20";
 
+const archivoClass =
+  "mt-1.5 block w-full rounded-lg border border-sage-light/50 bg-cream/40 px-3.5 py-2.5 text-sm text-sage-dark shadow-sm outline-none transition file:mr-3 file:rounded-md file:border-0 file:bg-forest file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-cream";
+
 const USOS_CFDI_CATALOGO = USOS_CFDI.filter((uso) => uso !== "Otro");
 
 export type ValoresPerfil = {
@@ -21,6 +24,9 @@ export type ValoresPerfil = {
   activo: boolean;
   usosCfdiHabilitados: string[] | null;
   comprobantePagoObligatorio: boolean;
+  logoUrl: string | null;
+  correoObligatorio: boolean;
+  telefonoObligatorio: boolean;
 };
 
 function normalizarSlugVista(valor: string): string {
@@ -53,6 +59,7 @@ export function PerfilForm({
         valoresIniciales?.usosCfdiHabilitados ?? USOS_CFDI_CATALOGO
       )
   );
+  const [quitarLogo, setQuitarLogo] = useState(false);
   const [configuracionesHabilitadas, setConfiguracionesHabilitadas] = useState<Set<string>>(
     () =>
       new Set(
@@ -133,6 +140,39 @@ export function PerfilForm({
         </div>
       </label>
 
+      <div className="block">
+        <span className="text-sm font-medium text-sage-dark">Logo del cliente (opcional)</span>
+        <p className="mt-1 text-xs text-sage-dark/60">
+          Aparece al centro de su código QR y junto a su nombre en el panel.
+        </p>
+        {valoresIniciales?.logoUrl && !quitarLogo ? (
+          <div className="mt-2 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={valoresIniciales.logoUrl}
+              alt="Logo actual"
+              className="h-12 w-12 rounded-full border border-sage-light/40 object-cover"
+            />
+            <label className="flex items-center gap-2 text-xs text-sage-dark">
+              <input
+                type="checkbox"
+                name="quitarLogo"
+                checked={quitarLogo}
+                onChange={(e) => setQuitarLogo(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+              />
+              Quitar logo actual
+            </label>
+          </div>
+        ) : null}
+        <input
+          type="file"
+          name="logo"
+          accept="image/*"
+          className={`${archivoClass} mt-2`}
+        />
+      </div>
+
       <label className="block">
         <span className="text-sm font-medium text-sage-dark">Tipo de solicitud</span>
         <select
@@ -179,6 +219,33 @@ export function PerfilForm({
           </span>
         </label>
       ) : null}
+
+      <div className="block">
+        <span className="text-sm font-medium text-sage-dark">Datos de contacto</span>
+        <div className="mt-2 space-y-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="correoObligatorio"
+              defaultChecked={
+                valoresIniciales?.correoObligatorio ??
+                tipoSolicitud === "Cliente final de un cliente REUK"
+              }
+              className="h-4 w-4 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+            />
+            <span className="text-sm text-sage-dark">Correo obligatorio</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="telefonoObligatorio"
+              defaultChecked={valoresIniciales?.telefonoObligatorio ?? false}
+              className="h-4 w-4 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+            />
+            <span className="text-sm text-sage-dark">Teléfono obligatorio</span>
+          </label>
+        </div>
+      </div>
 
       <div className="block">
         <span className="text-sm font-medium text-sage-dark">
