@@ -50,12 +50,18 @@ export default async function EditarPerfilPage({
               logoUrl: perfil.logoUrl,
               correoObligatorio: perfil.correoObligatorio,
               telefonoObligatorio: perfil.telefonoObligatorio,
+              qrColor: perfil.qrColor,
             }}
           />
         </div>
 
         <div className="mt-6">
-          <QrDescarga url={urlPerfil} logoUrl={perfil.logoUrl} nombre={perfil.nombre} />
+          <QrDescarga
+            url={urlPerfil}
+            logoUrl={perfil.logoUrl}
+            nombre={perfil.nombre}
+            color={perfil.qrColor}
+          />
         </div>
       </div>
     </main>

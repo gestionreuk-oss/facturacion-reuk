@@ -120,7 +120,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
     () =>
       conceptos
         .filter((c) => c.concepto.trim() || Number(c.monto) > 0)
-        .map((c) => `${c.concepto.trim() || "(sin descripción)"} — ${pesos.format(Number(c.monto) || 0)}`)
+        .map((c) => c.concepto.trim() || "(sin descripción)")
         .join("\n"),
     [conceptos]
   );

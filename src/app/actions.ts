@@ -80,6 +80,9 @@ function leerDatosPerfil(formData: FormData): DatosPerfilSinLogo | { error: stri
   const correoObligatorio = formData.get("correoObligatorio") === "on";
   const telefonoObligatorio = formData.get("telefonoObligatorio") === "on";
 
+  const qrColorCrudo = String(formData.get("qrColor") ?? "");
+  const qrColor = /^#[0-9a-fA-F]{6}$/.test(qrColorCrudo) ? qrColorCrudo : "#000000";
+
   return {
     slug,
     nombre,
@@ -91,6 +94,7 @@ function leerDatosPerfil(formData: FormData): DatosPerfilSinLogo | { error: stri
     comprobantePagoObligatorio,
     correoObligatorio,
     telefonoObligatorio,
+    qrColor,
   };
 }
 

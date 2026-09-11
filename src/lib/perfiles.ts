@@ -18,6 +18,8 @@ export type PerfilCliente = {
   logoUrl: string | null;
   correoObligatorio: boolean;
   telefonoObligatorio: boolean;
+  /** Color (hex) de los módulos del código QR de este perfil. */
+  qrColor: string;
   creadoEn: string;
 };
 
@@ -35,6 +37,7 @@ type FilaPerfil = {
   logo_url: string | null;
   correo_obligatorio: boolean | null;
   telefono_obligatorio: boolean | null;
+  qr_color: string | null;
   creado_en: string;
 };
 
@@ -59,6 +62,7 @@ function aPerfil(fila: FilaPerfil): PerfilCliente {
     correoObligatorio:
       fila.correo_obligatorio ?? fila.tipo_solicitud === "Cliente final de un cliente REUK",
     telefonoObligatorio: fila.telefono_obligatorio ?? false,
+    qrColor: fila.qr_color ?? "#000000",
     creadoEn: fila.creado_en,
   };
 }
@@ -99,6 +103,7 @@ export type DatosPerfil = {
   logoUrl: string | null;
   correoObligatorio: boolean;
   telefonoObligatorio: boolean;
+  qrColor: string;
 };
 
 export async function crearPerfil(datos: DatosPerfil): Promise<PerfilCliente> {
@@ -106,13 +111,13 @@ export async function crearPerfil(datos: DatosPerfil): Promise<PerfilCliente> {
     INSERT INTO perfiles
       (slug, nombre, activo, tipo_solicitud, negocio_cliente, configuracion_calculo_id,
        configuraciones_calculo_ids, usos_cfdi_habilitados, comprobante_pago_obligatorio,
-       logo_url, correo_obligatorio, telefono_obligatorio)
+       logo_url, correo_obligatorio, telefono_obligatorio, qr_color)
     VALUES
       (${datos.slug}, ${datos.nombre}, ${datos.activo}, ${datos.tipoSolicitud},
        ${datos.negocioCliente}, ${datos.configuracionesCalculoIds[0]},
        ${datos.configuracionesCalculoIds}, ${datos.usosCfdiHabilitados},
        ${datos.comprobantePagoObligatorio}, ${datos.logoUrl},
-       ${datos.correoObligatorio}, ${datos.telefonoObligatorio})
+       ${datos.correoObligatorio}, ${datos.telefonoObligatorio}, ${datos.qrColor})
     RETURNING *
   `;
   return aPerfil(filas[0]);
@@ -135,7 +140,8 @@ export async function actualizarPerfil(
       comprobante_pago_obligatorio = ${datos.comprobantePagoObligatorio},
       logo_url = ${datos.logoUrl},
       correo_obligatorio = ${datos.correoObligatorio},
-      telefono_obligatorio = ${datos.telefonoObligatorio}
+      telefono_obligatorio = ${datos.telefonoObligatorio},
+      qr_color = ${datos.qrColor}
     WHERE id = ${id}
     RETURNING *
   `;

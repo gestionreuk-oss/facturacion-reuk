@@ -54,6 +54,8 @@ try {
   // NULL = usa el valor por defecto según tipo_solicitud (ver src/lib/perfiles.ts).
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS correo_obligatorio boolean`;
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS telefono_obligatorio boolean`;
+  // Color (hex) de los módulos oscuros del código QR. NULL = negro por defecto.
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS qr_color text`;
   console.log("Listo: la tabla \"perfiles\" existe y está al día.");
 } finally {
   await sql.end();

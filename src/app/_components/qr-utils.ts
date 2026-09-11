@@ -29,15 +29,18 @@ function trazarRectanguloRedondeado(
   ctx.closePath();
 }
 
+export const QR_COLOR_DEFECTO = "#000000";
+
 /**
- * Genera un código QR (PNG, como data URL) que apunta a `url`. Si se da
- * `logoUrl`, lo dibuja al centro sobre un fondo blanco redondeado — el nivel
- * de corrección de errores "H" deja margen para que el logo no rompa la
- * lectura del código.
+ * Genera un código QR (PNG, como data URL) que apunta a `url`, con `color`
+ * en sus módulos oscuros (negro por defecto). Si se da `logoUrl`, lo dibuja
+ * al centro sobre un fondo blanco redondeado — el nivel de corrección de
+ * errores "H" deja margen para que el logo no rompa la lectura del código.
  */
 export async function generarQrDataUrl(
   url: string,
-  logoUrl?: string | null
+  logoUrl?: string | null,
+  color: string = QR_COLOR_DEFECTO
 ): Promise<string> {
   const tamaño = 640;
   const canvas = document.createElement("canvas");
@@ -46,7 +49,7 @@ export async function generarQrDataUrl(
     width: tamaño,
     margin: 2,
     errorCorrectionLevel: "H",
-    color: { dark: "#1A4121", light: "#F8F8F2" },
+    color: { dark: color, light: "#F8F8F2" },
   });
 
   if (logoUrl) {

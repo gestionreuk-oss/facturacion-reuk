@@ -7,17 +7,19 @@ export function LogoQrButton({
   logoUrl,
   url,
   nombre,
+  color,
 }: {
   logoUrl: string;
   url: string;
   nombre: string;
+  color: string;
 }) {
   const [cargando, setCargando] = useState(false);
 
   async function descargarQr() {
     setCargando(true);
     try {
-      const dataUrl = await generarQrDataUrl(url, logoUrl);
+      const dataUrl = await generarQrDataUrl(url, logoUrl, color);
       const enlace = document.createElement("a");
       enlace.href = dataUrl;
       enlace.download = nombreArchivoQr(nombre);

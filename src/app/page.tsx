@@ -78,6 +78,7 @@ export default async function AdminPage() {
                               logoUrl={perfil.logoUrl}
                               url={urlPerfil}
                               nombre={perfil.nombre}
+                              color={perfil.qrColor}
                             />
                           ) : null}
                           <div>

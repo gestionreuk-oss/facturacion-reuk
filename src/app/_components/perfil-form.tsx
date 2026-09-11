@@ -27,6 +27,7 @@ export type ValoresPerfil = {
   logoUrl: string | null;
   correoObligatorio: boolean;
   telefonoObligatorio: boolean;
+  qrColor: string;
 };
 
 function normalizarSlugVista(valor: string): string {
@@ -60,6 +61,7 @@ export function PerfilForm({
       )
   );
   const [quitarLogo, setQuitarLogo] = useState(false);
+  const [qrColor, setQrColor] = useState(valoresIniciales?.qrColor ?? "#000000");
   const [configuracionesHabilitadas, setConfiguracionesHabilitadas] = useState<Set<string>>(
     () =>
       new Set(
@@ -171,6 +173,30 @@ export function PerfilForm({
           accept="image/*"
           className={`${archivoClass} mt-2`}
         />
+      </div>
+
+      <div className="block">
+        <span className="text-sm font-medium text-sage-dark">Color del código QR</span>
+        <p className="mt-1 text-xs text-sage-dark/60">Negro por defecto — cámbialo si quieres.</p>
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            type="color"
+            name="qrColor"
+            value={qrColor}
+            onChange={(e) => setQrColor(e.target.value)}
+            className="h-10 w-14 cursor-pointer rounded-lg border border-sage-light/50 bg-cream/40 p-1"
+          />
+          <span className="font-mono text-sm text-sage-dark/70">{qrColor}</span>
+          {qrColor.toLowerCase() !== "#000000" ? (
+            <button
+              type="button"
+              onClick={() => setQrColor("#000000")}
+              className="text-xs font-medium text-forest underline underline-offset-2"
+            >
+              Volver a negro
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <label className="block">
