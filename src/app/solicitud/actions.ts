@@ -44,6 +44,7 @@ export async function crearSolicitud(
   const metodoPago = requerido(formData, "metodoPago");
   const tipoSolicitud = requerido(formData, "tipoSolicitud");
   const negocioCliente = requerido(formData, "negocioCliente");
+  const clienteReuk = requerido(formData, "clienteReuk");
   const configuracionId = requerido(formData, "configuracionId");
   const constanciaFiscal = formData.get("constanciaFiscal");
   const comprobantePago = formData.get("comprobantePago");
@@ -172,6 +173,7 @@ export async function crearSolicitud(
       clienteRecurrente: esRecurrente,
       tipoSolicitud,
       negocioCliente,
+      clienteReuk,
       configuracionNombre: configuracion.nombre,
       comprobantePagoUrl,
       constanciaFiscalUrl,

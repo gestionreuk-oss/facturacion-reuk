@@ -17,6 +17,7 @@ export type SolicitudFactura = {
   clienteRecurrente: boolean;
   tipoSolicitud: string;
   negocioCliente: string;
+  clienteReuk: string;
   configuracionNombre: string;
   subtotal: number;
   iva: number;
@@ -96,6 +97,9 @@ export async function crearSolicitudEnNotion(data: SolicitudFactura) {
   }
   if (data.usoCfdiOtro) {
     properties["Uso de CFDI (Otro)"] = { rich_text: richText(data.usoCfdiOtro) };
+  }
+  if (data.clienteReuk) {
+    properties["Cliente REUK"] = { rich_text: richText(data.clienteReuk) };
   }
 
   const res = await fetch("https://api.notion.com/v1/pages", {

@@ -191,6 +191,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
       {perfilFijo ? (
         <>
           <input type="hidden" name="tipoSolicitud" value={perfilFijo.tipoSolicitud} />
+          <input type="hidden" name="clienteReuk" value={perfilFijo.nombre} />
           {perfilFijo.negocioCliente ? (
             <input type="hidden" name="negocioCliente" value={perfilFijo.negocioCliente} />
           ) : null}
