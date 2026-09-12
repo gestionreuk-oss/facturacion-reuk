@@ -15,6 +15,13 @@ export default async function SolicitudPorPerfilPage({
     notFound();
   }
 
+  // Para clientes finales, el encabezado debe mostrar el negocio al que le
+  // compraron (ej. "Restaurante La Central"), no el nombre del perfil
+  // interno del cliente REUK que administra ese negocio.
+  const esClienteFinal = perfil.tipoSolicitud === "Cliente final de un cliente REUK";
+  const nombreMostrado =
+    esClienteFinal && perfil.negocioCliente ? perfil.negocioCliente : perfil.nombre;
+
   return (
     <main className="flex min-h-screen items-start justify-center bg-cream px-4 py-12 sm:py-16">
       <div className="w-full max-w-xl">
@@ -28,7 +35,7 @@ export default async function SolicitudPorPerfilPage({
             className="h-12 w-auto"
           />
           <h1 className="mt-7 font-serif text-3xl font-medium text-forest sm:text-4xl">
-            Solicitud de factura — {perfil.nombre}
+            Solicitud de factura — {nombreMostrado}
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-sage-dark/80">
             Llena los datos fiscales y te la haremos llegar por correo.
