@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+import { avisarNuevaSolicitud } from "@/lib/avisos";
 import { calcularNeto } from "@/lib/calculo";
 import { buscarConfiguracion } from "@/lib/configuraciones";
 import { esArchivoValido, subirArchivo } from "@/lib/blob";
@@ -183,6 +185,9 @@ export async function crearSolicitud(
       constanciaFiscalUrl,
       ...desglose,
     });
+    // Push a tu celular/PC vía ntfy. Va DESPUÉS de responder al cliente, para
+    // no retrasar su confirmación; si falla, la solicitud ya está en Notion.
+    after(() => avisarNuevaSolicitud({ folio, tipoSolicitud, clienteReuk }));
     return { status: "success", folio };
   } catch (error) {
     console.error("Error creando solicitud en Notion:", error);
