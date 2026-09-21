@@ -50,6 +50,7 @@ export default async function SolicitudPorPerfilPage({
               negocioCliente: perfil.negocioCliente,
               configuracionesCalculoIds: perfil.configuracionesCalculoIds,
               usosCfdiHabilitados: perfil.usosCfdiHabilitados,
+              comprobanteHabilitado: perfil.comprobanteHabilitado,
               comprobantePagoObligatorio: perfil.comprobantePagoObligatorio,
               correoObligatorio: perfil.correoObligatorio,
               telefonoObligatorio: perfil.telefonoObligatorio,

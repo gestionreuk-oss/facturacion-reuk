@@ -23,6 +23,7 @@ export type ValoresPerfil = {
   configuracionesCalculoIds: string[];
   activo: boolean;
   usosCfdiHabilitados: string[] | null;
+  comprobanteHabilitado: boolean;
   comprobantePagoObligatorio: boolean;
   logoUrl: string | null;
   correoObligatorio: boolean;
@@ -61,6 +62,9 @@ export function PerfilForm({
       )
   );
   const [quitarLogo, setQuitarLogo] = useState(false);
+  const [comprobanteHabilitado, setComprobanteHabilitado] = useState(
+    valoresIniciales?.comprobanteHabilitado ?? false
+  );
   const [qrColor, setQrColor] = useState(valoresIniciales?.qrColor ?? "#000000");
   const [configuracionesHabilitadas, setConfiguracionesHabilitadas] = useState<Set<string>>(
     () =>
@@ -244,7 +248,33 @@ export function PerfilForm({
             Comprobante de pago obligatorio para enviar la solicitud
           </span>
         </label>
-      ) : null}
+      ) : (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="comprobanteHabilitado"
+              checked={comprobanteHabilitado}
+              onChange={(e) => setComprobanteHabilitado(e.target.checked)}
+              className="h-4 w-4 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+            />
+            <span className="text-sm text-sage-dark">
+              Permitir adjuntar archivo en la solicitud
+            </span>
+          </label>
+          {comprobanteHabilitado ? (
+            <label className="ml-6 flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="comprobantePagoObligatorio"
+                defaultChecked={valoresIniciales?.comprobantePagoObligatorio ?? false}
+                className="h-4 w-4 rounded border-sage-light/60 text-forest focus:ring-forest/30"
+              />
+              <span className="text-sm text-sage-dark">Obligatorio para enviar la solicitud</span>
+            </label>
+          ) : null}
+        </div>
+      )}
 
       <div className="block">
         <span className="text-sm font-medium text-sage-dark">Datos de contacto</span>

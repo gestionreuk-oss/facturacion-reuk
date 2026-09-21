@@ -56,6 +56,9 @@ try {
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS telefono_obligatorio boolean`;
   // Color (hex) de los módulos oscuros del código QR. NULL = negro por defecto.
   await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS qr_color text`;
+  // Si el formulario público muestra la opción de adjuntar archivo/comprobante.
+  // NULL = por defecto según tipo_solicitud (siempre true para cliente final).
+  await sql`ALTER TABLE perfiles ADD COLUMN IF NOT EXISTS comprobante_habilitado boolean`;
   console.log("Listo: la tabla \"perfiles\" existe y está al día.");
 } finally {
   await sql.end();

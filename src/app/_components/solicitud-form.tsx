@@ -61,6 +61,7 @@ export type PerfilFijo = {
   negocioCliente: string | null;
   configuracionesCalculoIds: string[];
   usosCfdiHabilitados: string[] | null;
+  comprobanteHabilitado: boolean;
   comprobantePagoObligatorio: boolean;
   correoObligatorio: boolean;
   telefonoObligatorio: boolean;
@@ -93,6 +94,7 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
   const esRecurrente = esDirectoReuk && clienteRecurrente;
   const modoFiscalEfectivo = esRecurrente ? "recurrente" : modoFiscal;
   const esPPD = metodoPago === "PPD - Pago en parcialidades o diferido";
+  const comprobanteHabilitado = perfilFijo ? perfilFijo.comprobanteHabilitado : esClienteFinal;
   const comprobanteRequerido = perfilFijo?.comprobantePagoObligatorio ?? false;
   const correoObligatorio = perfilFijo?.correoObligatorio ?? !esDirectoReuk;
   const mostrarTelefono = perfilFijo ? true : !esDirectoReuk;
@@ -536,13 +538,24 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
         ) : null}
       </fieldset>
 
-      {esClienteFinal ? (
+      {comprobanteHabilitado ? (
         <fieldset className="space-y-5">
-          <legend className={legendClass}>Comprobante de pago</legend>
+          <legend className={legendClass}>
+            {esClienteFinal ? "Comprobante de pago" : "Adjuntar archivo"}
+          </legend>
+          <input type="hidden" name="comprobanteHabilitado" value="true" />
           <input type="hidden" name="comprobanteRequerido" value={comprobanteRequerido ? "true" : "false"} />
           <Campo
-            label={comprobanteRequerido ? "Sube tu comprobante de pago" : "Sube tu comprobante (opcional)"}
-            hint="Foto o captura de la transferencia/pago."
+            label={
+              esClienteFinal
+                ? comprobanteRequerido
+                  ? "Sube tu comprobante de pago"
+                  : "Sube tu comprobante (opcional)"
+                : comprobanteRequerido
+                  ? "Adjuntar archivo"
+                  : "Adjuntar archivo (opcional)"
+            }
+            hint={esClienteFinal ? "Foto o captura de la transferencia/pago." : "PDF o imagen de respaldo."}
           >
             <input
               type="file"

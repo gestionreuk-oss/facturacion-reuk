@@ -76,6 +76,12 @@ function leerDatosPerfil(formData: FormData): DatosPerfilSinLogo | { error: stri
   const usosCfdiHabilitados =
     usosCfdiSeleccionados.length === usosCfdiCatalogo.length ? null : usosCfdiSeleccionados;
 
+  // Para "Cliente final" siempre está habilitado (comportamiento de siempre);
+  // para "Cliente directo de REUK" es opcional, lo decide el checkbox.
+  const comprobanteHabilitado =
+    tipoSolicitud === "Cliente final de un cliente REUK"
+      ? true
+      : formData.get("comprobanteHabilitado") === "on";
   const comprobantePagoObligatorio = formData.get("comprobantePagoObligatorio") === "on";
   const correoObligatorio = formData.get("correoObligatorio") === "on";
   const telefonoObligatorio = formData.get("telefonoObligatorio") === "on";
@@ -91,6 +97,7 @@ function leerDatosPerfil(formData: FormData): DatosPerfilSinLogo | { error: stri
     negocioCliente: negocioCliente || null,
     configuracionesCalculoIds,
     usosCfdiHabilitados,
+    comprobanteHabilitado,
     comprobantePagoObligatorio,
     correoObligatorio,
     telefonoObligatorio,

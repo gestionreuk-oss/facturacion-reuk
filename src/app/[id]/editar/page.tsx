@@ -46,6 +46,7 @@ export default async function EditarPerfilPage({
               configuracionesCalculoIds: perfil.configuracionesCalculoIds,
               activo: perfil.activo,
               usosCfdiHabilitados: perfil.usosCfdiHabilitados,
+              comprobanteHabilitado: perfil.comprobanteHabilitado,
               comprobantePagoObligatorio: perfil.comprobantePagoObligatorio,
               logoUrl: perfil.logoUrl,
               correoObligatorio: perfil.correoObligatorio,

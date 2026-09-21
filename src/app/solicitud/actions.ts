@@ -50,6 +50,7 @@ export async function crearSolicitud(
   const configuracionId = requerido(formData, "configuracionId");
   const constanciaFiscal = formData.get("constanciaFiscal");
   const comprobantePago = formData.get("comprobantePago");
+  const comprobanteHabilitado = requerido(formData, "comprobanteHabilitado") === "true";
   const comprobanteRequerido = requerido(formData, "comprobanteRequerido") === "true";
   const correoObligatorio = requerido(formData, "correoObligatorio") === "true";
   const telefonoObligatorio = requerido(formData, "telefonoObligatorio") === "true";
@@ -139,8 +140,11 @@ export async function crearSolicitud(
     }
   }
 
-  if (esClienteFinal && comprobanteRequerido && !esArchivoValido(comprobantePago)) {
-    return { status: "error", message: "Sube tu comprobante de pago." };
+  if (comprobanteHabilitado && comprobanteRequerido && !esArchivoValido(comprobantePago)) {
+    return {
+      status: "error",
+      message: esClienteFinal ? "Sube tu comprobante de pago." : "Adjunta el archivo.",
+    };
   }
 
   const configuracion = buscarConfiguracion(configuracionId);
@@ -160,7 +164,7 @@ export async function crearSolicitud(
     }
 
     let comprobantePagoUrl = "";
-    if (esClienteFinal && esArchivoValido(comprobantePago)) {
+    if (comprobanteHabilitado && esArchivoValido(comprobantePago)) {
       comprobantePagoUrl = await subirArchivo(comprobantePago, "comprobantes");
     }
 
