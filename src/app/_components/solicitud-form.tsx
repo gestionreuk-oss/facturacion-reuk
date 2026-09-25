@@ -20,10 +20,11 @@ import {
 const ESTADO_INICIAL: EstadoSolicitud = { status: "idle" };
 const CONFIGURACIONES_ACTIVAS = configuracionesActivas();
 
-// Debe coincidir con serverActions.bodySizeLimit en next.config.ts. Vercel
-// además impone un techo de 4.5MB por función serverless que no se puede
-// subir desde aquí — este límite se queda cómodamente debajo de eso.
-const MAX_ARCHIVO_MB = 4;
+// Un poco por debajo de serverActions.bodySizeLimit (4.2mb) en next.config.ts,
+// para dejar margen a los demás campos del formulario y al overhead del
+// multipart. Vercel además impone un techo de 4.5MB por función serverless
+// que no se puede subir desde aquí.
+const MAX_ARCHIVO_MB = 4.1;
 const MAX_ARCHIVO_BYTES = MAX_ARCHIVO_MB * 1024 * 1024;
 
 const pesos = new Intl.NumberFormat("es-MX", {
