@@ -20,6 +20,12 @@ import {
 const ESTADO_INICIAL: EstadoSolicitud = { status: "idle" };
 const CONFIGURACIONES_ACTIVAS = configuracionesActivas();
 
+// Debe coincidir con serverActions.bodySizeLimit en next.config.ts. Vercel
+// además impone un techo de 4.5MB por función serverless que no se puede
+// subir desde aquí — este límite se queda cómodamente debajo de eso.
+const MAX_ARCHIVO_MB = 4;
+const MAX_ARCHIVO_BYTES = MAX_ARCHIVO_MB * 1024 * 1024;
+
 const pesos = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
@@ -86,7 +92,29 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
   const [conceptos, setConceptos] = useState<ConceptoItem[]>([nuevoConceptoVacio()]);
   const [usoCfdi, setUsoCfdi] = useState("");
   const [metodoPago, setMetodoPago] = useState("");
+  const [errorConstancia, setErrorConstancia] = useState<string | null>(null);
+  const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  function validarTamañoArchivo(
+    e: React.ChangeEvent<HTMLInputElement>,
+    setError: (mensaje: string | null) => void
+  ) {
+    const archivo = e.target.files?.[0];
+    if (!archivo) {
+      setError(null);
+      return;
+    }
+    if (archivo.size > MAX_ARCHIVO_BYTES) {
+      const pesoMb = (archivo.size / (1024 * 1024)).toFixed(1);
+      setError(
+        `Este archivo pesa ${pesoMb} MB. El máximo permitido es ${MAX_ARCHIVO_MB} MB — comprime el PDF o usa una foto más ligera.`
+      );
+      e.target.value = "";
+      return;
+    }
+    setError(null);
+  }
 
   const tipoEfectivo = perfilFijo?.tipoSolicitud ?? tipoSolicitud;
   const esDirectoReuk = tipoEfectivo === "Cliente directo de REUK";
@@ -353,8 +381,14 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
                   name="constanciaFiscal"
                   required
                   accept="application/pdf,image/*"
+                  onChange={(e) => validarTamañoArchivo(e, setErrorConstancia)}
                   className={archivoClass}
                 />
+                {errorConstancia ? (
+                  <p role="alert" className="mt-1.5 text-xs text-red-600">
+                    {errorConstancia}
+                  </p>
+                ) : null}
               </Campo>
             )}
           </>
@@ -562,8 +596,14 @@ export function SolicitudForm({ perfilFijo }: { perfilFijo?: PerfilFijo }) {
               name="comprobantePago"
               required={comprobanteRequerido}
               accept="image/*,application/pdf"
+              onChange={(e) => validarTamañoArchivo(e, setErrorComprobante)}
               className={archivoClass}
             />
+            {errorComprobante ? (
+              <p role="alert" className="mt-1.5 text-xs text-red-600">
+                {errorComprobante}
+              </p>
+            ) : null}
           </Campo>
         </fieldset>
       ) : null}
